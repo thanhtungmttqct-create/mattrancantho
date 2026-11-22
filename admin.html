@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quản trị điểm danh</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{--do:#c8102e;--do-dam:#9b0c23;--vang:#f5c518;--xanh:#15803d;--chu:#1f2937;--nhat:#6b7280;--vien:#e5e7eb;--nen:#f6f3ee}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:var(--nen);color:var(--chu);font-size:14px}
+  header{background:linear-gradient(135deg,var(--do),var(--do-dam));color:#fff;padding:12px 18px;border-bottom:4px solid var(--vang);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;flex:1}
+  header small{display:block;font-size:11px;opacity:.9;text-transform:uppercase;letter-spacing:.04em;font-weight:400}
+  nav{display:flex;gap:4px;flex-wrap:wrap}
+  nav button{background:rgba(255,255,255,.14);border:0;color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:14px}
+  nav button.on{background:#fff;color:var(--do);font-weight:700}
+  main{max-width:1200px;margin:0 auto;padding:16px}
+  .tab[hidden],.an{display:none!important}
+  .the{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(0,0,0,.06);margin-bottom:14px}
+  h2{font-size:16px;margin:0 0 12px;color:var(--do-dam)}
+  label{display:block;font-size:12px;color:var(--nhat);margin:8px 0 3px}
+  input,select,textarea{width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font:inherit}
+  textarea{min-height:110px;font-family:Consolas,monospace;font-size:13px}
+  .luoi{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 12px}
+  .btn{border:0;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;background:var(--do);color:#fff;white-space:nowrap}
+  .btn.phu{background:#fff;color:var(--do);border:1px solid var(--do)}
+  .btn.xam{background:#f3f4f6;color:var(--chu)}
+  .btn.nho{padding:4px 9px;font-size:12px;font-weight:500}
+  .btn:disabled{opacity:.5;cursor:default}
+  .hang{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:7px 8px;border-bottom:1px solid var(--vien);text-align:left;vertical-align:middle}
+  th{background:#fafafa;font-size:12px;color:var(--nhat);position:sticky;top:0}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
+  .b-xanh{background:#dcfce7;color:#166534}.b-do{background:#fee2e2;color:#991b1b}.b-vang{background:#fef9c3;color:#854d0e}.b-xam{background:#f3f4f6;color:#4b5563}
+  .sk-the{border:1px solid var(--vien);border-left:5px solid var(--vang);border-radius:10px;padding:12px;margin-bottom:10px}
+  .sk-the h3{margin:0 0 4px;font-size:15px}
+  .nho{font-size:12px;color:var(--nhat)}
+  .thumb{width:44px;height:44px;object-fit:cover;border-radius:8px;background:#eee;vertical-align:middle}
+  .so{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .so div{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+  .so b{display:block;font-size:28px;color:var(--do-dam)}
+  .cuon{max-height:520px;overflow:auto}
+  #modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
+  #modal .hop{background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:92vh;overflow:auto;padding:18px}
+  .camk{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3}
+  .camk video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  #nhatKy{font-family:Consolas,monospace;font-size:12px;background:#111827;color:#d1fae5;padding:10px;border-radius:8px;max-height:220px;overflow:auto;white-space:pre-wrap}
+  #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;z-index:60;max-width:90vw}
+  #dangNhap{max-width:360px;margin:60px auto}
+  /* In thẻ */
+  #vungIn{display:none}
+  @media print{
+    @page{size:A4;margin:12mm}
+    body{background:#fff}
+    body > *:not(#vungIn){display:none!important}
+    #vungIn{display:block!important;text-align:center;font-family:"Segoe UI",Arial,sans-serif;color:#111}
+    .pt-dau{background:#c8102e!important;color:#fff!important;padding:6mm;border-bottom:3mm solid #f5c518;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .pt-dau small{display:block;font-size:12pt;letter-spacing:.05em}
+    .pt-dau b{display:block;font-size:26pt;margin-top:2mm}
+    .pt-ten{font-size:18pt;font-weight:700;color:#9b0c23;margin:8mm 10mm 2mm}
+    .pt-tt{font-size:12pt;color:#444}
+    .pt-qr{width:105mm;height:105mm;margin:7mm auto 4mm;display:block}
+    .pt-bc{text-align:left;display:inline-block;font-size:13pt;line-height:1.7;margin-top:2mm}
+    .pt-chan{font-size:10pt;color:#666;margin-top:6mm}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1><small>Ủy ban MTTQ Việt Nam thành phố Cần Thơ</small>Quản trị điểm danh hội nghị</h1>
+  <nav id="nav" class="an">
+    <button data-tab="tSK" class="on">Hội nghị</button>
+    <button data-tab="tDB">Đại biểu</button>
+    <button data-tab="tKQ">Kết quả</button>
+    <button data-tab="tCD">Cài đặt</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ĐĂNG NHẬP -->
+  <div id="dangNhap" class="the">
+    <h2>Đăng nhập quản trị</h2>
+    <label>Mật khẩu</label>
+    <input type="password" id="mk" onkeydown="if(event.key==='Enter')dangNhap()">
+    <div class="hang"><button class="btn" onclick="dangNhap()">Đăng nhập</button></div>
+  </div>
+
+  <!-- HỘI NGHỊ -->
+  <section id="tSK" class="tab" hidden>
+    <div class="the">
+      <h2 id="skTieuDe">Thêm hội nghị / tập huấn</h2>
+      <input type="hidden" id="skMa">
+      <div class="luoi">
+        <div style="grid-column:1/-1"><label>Tên hội nghị *</label><input id="skTen" placeholder="VD: Hội nghị tập huấn nghiệp vụ công tác Mặt trận năm 2026"></div>
+        <div style="grid-column:1/-1"><label>Địa điểm</label><input id="skDD" placeholder="VD: Hội trường Ủy ban MTTQ Việt Nam thành phố"></div>
+        <div><label>Bắt đầu *</label><input type="datetime-local" id="skBD"></div>
+        <div><label>Kết thúc *</label><input type="datetime-local" id="skKT"></div>
+        <div><label>Vĩ độ * (có thể dán "vĩ độ, kinh độ" từ Google Maps)</label><input id="skLat" oninput="tachToaDo(this)"></div>
+        <div><label>Kinh độ *</label><input id="skLng"></div>
+        <div><label>Bán kính cho phép (m)</label><input type="number" id="skBK" value="200" min="30"></div>
+        <div><label>Nhóm tham dự (để trống = tất cả)</label><input id="skNhom" placeholder="VD: TapHuan2026, BTT"></div>
+        <div><label>Trạng thái</label><select id="skTT"><option>Mở</option><option>Đóng</option></select></div>
+      </div>
+      <div class="hang">
+        <button class="btn phu" onclick="layViTriHienTai()">📍 Lấy vị trí hiện tại của tôi</button>
+        <a id="skBanDo" class="btn xam" target="_blank" href="#" style="text-decoration:none">🗺 Kiểm tra trên bản đồ</a>
+        <span class="nho" id="skGPS"></span>
+      </div>
+      <div class="hang">
+        <button class="btn" onclick="luuSK()">Lưu hội nghị</button>
+        <button class="btn xam" onclick="formSK()">Làm mới form</button>
+      </div>
+    </div>
+    <div class="the">
+      <h2>Danh sách hội nghị</h2>
+      <div id="dsSK"></div>
+    </div>
+    <div class="the">
+      <h2>Đường dẫn sử dụng</h2>
+      <div class="nho">Trang điểm danh cho đại biểu (đường dẫn nằm trong mã QR chung — bấm <b>In mã QR</b> ở từng hội nghị để in áp phích dán tại cửa hội trường):</div>
+      <div class="hang"><input readonly id="urlQuet"><button class="btn nho" onclick="saoChep('urlQuet')">Sao chép</button></div>
+      <div class="nho" style="margin-top:8px">Máy tính bảng đặt tại bàn đón tiếp (không ghi nhớ người dùng, tự chuyển người tiếp theo):</div>
+      <div class="hang"><input readonly id="urlKiosk"><button class="btn nho" onclick="saoChep('urlKiosk')">Sao chép</button></div>
+    </div>
+  </section>
+
+  <!-- ĐẠI BIỂU -->
+  <section id="tDB" class="tab" hidden>
+    <div class="the">
+      <h2>Thêm đại biểu (dán từ Excel)</h2>
+      <div class="nho">Mỗi dòng một người, các cột theo thứ tự: <b>Họ tên | Chức vụ | Đơn vị | Nhóm</b>. Mã đại biểu được tạo tự động. Đại biểu sẽ tự chọn tên mình và đăng ký khuôn mặt ở lần quét đầu tiên; Ban Tổ chức cũng có thể đăng ký trước bằng ảnh.</div>
+      <textarea id="dbDan" placeholder="Nguyễn Văn A	Phó Chủ tịch	Ủy ban MTTQ phường Ninh Kiều	TapHuan2026"></textarea>
+      <div class="hang"><button class="btn" onclick="themDB()">Thêm vào danh sách</button></div>
+    </div>
+    <div class="the">
+      <div class="hang" style="margin-top:0">
+        <input id="dbTim" placeholder="Tìm họ tên, đơn vị, mã…" style="max-width:260px" oninput="veDB()">
+        <select id="dbLocNhom" style="max-width:180px" onchange="veDB()"></select>
+        <select id="dbLocMat" style="max-width:180px" onchange="veDB()">
+          <option value="">Tất cả</option><option value="cho">Tự đăng ký – chờ xác nhận</option><option value="co">Đã đăng ký mặt</option><option value="chua">Chưa đăng ký mặt</option>
+        </select>
+        <span class="nho" id="dbDem"></span>
+      </div>
+      <div class="hang">
+        <label class="btn phu" style="margin:0;color:var(--do)">📁 Đăng ký mặt hàng loạt
+          <input type="file" accept="image/*" multiple class="an" onchange="dangKyHangLoat(this.files);this.value=''"></label>
+        <span class="nho">Đặt tên ảnh theo mã đại biểu, VD <b>DB0001.jpg</b></span>
+      </div>
+      <div id="nhatKyBox" class="an" style="margin-top:10px"><div id="nhatKy"></div></div>
+    </div>
+    <div class="the cuon">
+      <table><thead><tr><th>Mã</th><th>Họ tên / Chức vụ / Đơn vị</th><th>Nhóm</th><th>Khuôn mặt</th><th style="width:250px">Thao tác</th></tr></thead>
+      <tbody id="dsDB"></tbody></table>
+    </div>
+  </section>
+
+  <!-- KẾT QUẢ -->
+  <section id="tKQ" class="tab" hidden>
+    <div class="the">
+      <div class="hang" style="margin-top:0">
+        <select id="kqSK" style="max-width:420px" onchange="taiKQ()"></select>
+        <button class="btn" onclick="taiKQ()">Làm mới</button>
+        <label style="margin:0;display:flex;gap:6px;align-items:center;color:var(--chu)"><input type="checkbox" id="kqTu" style="width:auto" onchange="tuLamMoi()"> Tự làm mới 15 giây</label>
+        <a id="lnkSheet" target="_blank" class="btn xam" style="text-decoration:none">Mở Google Sheet</a>
+        <span class="nho" id="kqCN"></span>
+      </div>
+    </div>
+    <div class="so" id="kqSo"></div>
+    <div class="the cuon"><h2>Đã điểm danh</h2><table><thead><tr><th>#</th><th>Giờ</th><th>Họ tên</th><th>Đơn vị</th><th>Cách (m)</th><th>Độ lệch mặt</th><th>Đối chiếu</th></tr></thead><tbody id="kqOK"></tbody></table></div>
+    <div class="the cuon"><h2>Chưa điểm danh</h2><table><thead><tr><th>#</th><th>Mã</th><th>Họ tên</th><th>Chức vụ</th><th>Đơn vị</th><th>Khuôn mặt</th></tr></thead><tbody id="kqChua"></tbody></table></div>
+    <div class="the cuon"><h2>Lượt bị từ chối (đối chiếu chống điểm danh hộ)</h2><table><thead><tr><th>Giờ</th><th>Họ tên</th><th>Lý do</th><th>Cách (m)</th><th>Độ lệch mặt</th><th>Đối chiếu</th></tr></thead><tbody id="kqTC"></tbody></table></div>
+  </section>
+
+  <!-- CÀI ĐẶT -->
+  <section id="tCD" class="tab" hidden>
+    <div class="the">
+      <h2>Ngưỡng xác thực</h2>
+      <div class="luoi">
+        <div><label>Độ lệch khuôn mặt tối đa (0.40 rất chặt – 0.50 dễ; khuyến nghị 0.45)</label><input type="number" step="0.01" min="0.3" max="0.7" id="cdMat"></div>
+        <div><label>Sai số GPS tối đa (m)</label><input type="number" id="cdGPS"></div>
+        <div><label>Cho điểm danh sớm trước giờ bắt đầu (phút)</label><input type="number" id="cdSom"></div>
+        <div><label>Cho điểm danh sau giờ kết thúc (phút)</label><input type="number" id="cdTre"></div>
+        <div><label>Tự đăng ký khuôn mặt</label><select id="cdDKHT"><option value="1">Chỉ tại hội trường, trong giờ hội nghị</option><option value="0">Ở đâu, lúc nào cũng được</option></select></div>
+        <div><label>Tự học mẫu khuôn mặt</label><select id="cdTuHoc"><option value="1">Bật — thêm ảnh mới sau mỗi lần điểm danh thành công</option><option value="0">Tắt</option></select></div>
+      </div>
+      <div class="hang"><button class="btn" onclick="luuCD()">Lưu cài đặt</button></div>
+      <p class="nho">Gợi ý: xem cột "Độ lệch mặt" ở trang Kết quả. Cùng một người thường lệch 0,30–0,42; hai người khác nhau thường từ 0,55 trở lên. Nếu người thật hay bị từ chối, ưu tiên đăng ký thêm ảnh mẫu (chụp trực tiếp tại bàn đón tiếp) trước khi nâng ngưỡng; không nên vượt 0,50.</p>
+    </div>
+    <div class="the">
+      <h2>Đổi mật khẩu quản trị</h2>
+      <div class="luoi"><div><label>Mật khẩu mới (≥ 6 ký tự)</label><input type="password" id="cdMK"></div></div>
+      <div class="hang"><button class="btn" onclick="doiMK()">Đổi mật khẩu</button></div>
+    </div>
+  </section>
+</main>
+
+<div id="modal" class="an"><div class="hop" id="modalNoiDung"></div></div>
+<div id="toast" class="an"></div>
+<div id="vungIn"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js"></script>
+<script>
+/* ======= DÁN ĐƯỜNG DẪN WEB APP APPS SCRIPT (kết thúc bằng /exec) VÀO ĐÂY ======= */
+const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnTipRPaNh_tuuXs95Bi9-NkDVRPWylV7Q7d9T8ULyHyyVTY64YVOGzn-eZ18JTRaGkz0O9jzgBkG-tjrd8pxyrc2p4TtY4ieZJjIaSaOLaxQbCDcJYPaPIkHAmxXUnAy52IaOm-5SvuLtbhjmhqxIdXGQfkCxDEh6ISy2EXL3r_SSQbzj-Lt8CuiY4DGwhk9y_8NlzwZzABnorNsRPxZsEDMn3J7RSGJLl-IjXYm6B2U2rJfCFMcM78w8rRrStYo8VxVQmfEvNxSZwsfQb42bULgY_KFA&lib=MOHHpIoiQQAnQy8srwf0ZAf29J1for0wG';
+/* ============================================================================== */
+// Trang điểm danh nằm cùng thư mục với trang quản trị
+const WEB_URL = new URL('index.html', location.href.split('?')[0].split('#')[0]).href;
+const KIOSK_URL = WEB_URL + '?kiosk=1';
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model';
+let MK = '', D = null, modelsP = null, camStream = null, hengio = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ngu = ms => new Promise(r => setTimeout(r, ms));
+async function goi(action, ...a){
+  const r = await fetch(API_URL, { method: 'POST', redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, args: [MK, ...a] }) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.loi || 'Lỗi máy chủ');
+  return j.kq;
+}
+function bao(t, ms){ const e = $('toast'); e.textContent = t; e.classList.remove('an'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.add('an'), ms || 3500); }
+function loi(e){ bao('⚠ ' + (e && e.message || e), 6000); }
+/* Ảnh được tải qua API (không cần chia sẻ thư mục Drive) */
+let KQ = { ok: [], tc: [] };
+async function xemAnh(ids, tieuDe, ghiChu){
+  const nhan = ['Ảnh mẫu đã đăng ký', 'Ảnh chụp khi điểm danh'];
+  moModal('<h2>' + esc(tieuDe) + '</h2>' + (ghiChu ? '<p class="nho">' + esc(ghiChu) + '</p>' : '') +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap">' + ids.map((id, i) => '<figure style="margin:0;flex:1;min-width:180px"><div id="anh' + i + '" class="nho" style="min-height:160px;background:#f3f4f6;border-radius:8px;display:flex;align-items:center;justify-content:center">' + (id ? 'Đang tải…' : 'Không có ảnh') + '</div><figcaption class="nho" style="text-align:center">' + (ids.length > 1 ? nhan[i] : '') + '</figcaption></figure>').join('') +
+    '</div><div class="hang"><button class="btn xam" onclick="dongModal()">Đóng</button></div>');
+  try {
+    const r = await goi('adminLayAnh', ids.filter(Boolean));
+    ids.forEach((id, i) => { if (id && $('anh' + i)) $('anh' + i).innerHTML = r[id] ? '<img src="' + r[id] + '" style="max-width:100%;border-radius:8px">' : 'Không đọc được ảnh'; });
+  } catch (e) { loi(e); }
+}
+function xemAnhDB(ma){
+  const d = timDB(ma);
+  xemAnh([d.anhMau], 'Ảnh mẫu — ' + d.hoTen + ' (' + ma + ')', [d.chucVu, d.donVi].filter(Boolean).join(' — ') +
+    ' · Nguồn: ' + (d.nguon || '—') + (d.ngayDK ? ' lúc ' + d.ngayDK : '') + (d.viTriDK ? ' · Vị trí ĐK: ' + d.viTriDK : ''));
+  if (d.nguon === 'Tự đăng ký' && !d.xacNhan) setTimeout(() => {
+    const h = document.querySelector('#modalNoiDung .hang');
+    if (h) h.insertAdjacentHTML('afterbegin', '<button class="btn" onclick="xacNhanDK(\'' + ma + '\')">✔ Đúng người — xác nhận</button>' +
+      '<button class="btn phu" onclick="xoaMat(\'' + ma + '\', true)">✖ Sai người — hủy đăng ký</button>');
+  }, 0);
+}
+function xemAnhKQ(loai, i){ const x = KQ[loai][i]; xemAnh([x.anhMau, x.anh], x.hoTen + ' — ' + x.gio, 'Độ lệch mặt: ' + x.lech + ' · Cách hội trường: ' + x.kc + ' m' + (x.lyDo ? ' · ' + x.lyDo : '')); }
+
+/* ---------- Đăng nhập & điều hướng ---------- */
+async function dangNhap(){
+  MK = $('mk').value;
+  try { nhanDuLieu(await goi('adminDangNhap')); }
+  catch (e) { MK = ''; return loi(e); }
+  $('dangNhap').classList.add('an'); $('nav').classList.remove('an'); moTab('tSK');
+  if (MK === 'mttq@2026') bao('Bạn đang dùng mật khẩu mặc định — hãy đổi trong mục Cài đặt.', 7000);
+}
+document.querySelectorAll('#nav button').forEach(b => b.onclick = () => moTab(b.dataset.tab));
+function moTab(id){
+  document.querySelectorAll('.tab').forEach(t => t.hidden = t.id !== id);
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
+  if (id === 'tKQ') taiKQ();
+}
+function nhanDuLieu(d){
+  D = d;
+  $('urlQuet').value = WEB_URL; $('urlKiosk').value = KIOSK_URL; $('lnkSheet').href = d.ssUrl;
+  const c = d.cauHinh; $('cdMat').value = c.NGUONG_KHUON_MAT; $('cdGPS').value = c.GPS_TOI_DA_M; $('cdSom').value = c.PHUT_SOM; $('cdTre').value = c.PHUT_TRE;
+  $('cdDKHT').value = String(c.DANG_KY_TAI_HOI_TRUONG); $('cdTuHoc').value = String(c.TU_HOC_MAU);
+  veSK(); veLocNhom(); veDB(); veChonSK();
+}
+async function lamMoi(){ try { nhanDuLieu(await goi('adminLayDuLieu')); } catch (e) { loi(e); } }
+
+/* ---------- Hội nghị ---------- */
+function tachToaDo(el){
+  const m = el.value.match(/(-?\d+(?:\.\d+)?)\s*[,; ]\s*(-?\d+(?:\.\d+)?)/);
+  if (m){ $('skLat').value = m[1]; $('skLng').value = m[2]; }
+  capNhatBanDo();
+}
+function capNhatBanDo(){ $('skBanDo').href = 'https://www.google.com/maps?q=' + $('skLat').value + ',' + $('skLng').value; }
+$('skLng').oninput = capNhatBanDo;
+function layViTriHienTai(){
+  if (!navigator.geolocation) return bao('Thiết bị không hỗ trợ định vị');
+  $('skGPS').textContent = 'Đang lấy vị trí… (đứng tại hội trường để chính xác nhất)';
+  let tot = null, id = null;
+  const xong = () => { navigator.geolocation.clearWatch(id);
+    if (!tot) return $('skGPS').textContent = 'Không lấy được vị trí.';
+    $('skLat').value = tot.latitude.toFixed(6); $('skLng').value = tot.longitude.toFixed(6); capNhatBanDo();
+    $('skGPS').textContent = 'Đã lấy vị trí, sai số ±' + Math.round(tot.accuracy) + ' m'; };
+  id = navigator.geolocation.watchPosition(p => { if (!tot || p.coords.accuracy < tot.accuracy) tot = p.coords; if (tot.accuracy <= 15) xong(); },
+    e => { $('skGPS').textContent = 'Lỗi định vị: ' + e.message; }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+  setTimeout(xong, 12000);
+}
+function formSK(s){
+  s = s || {};
+  $('skTieuDe').textContent = s.maSK ? 'Sửa hội nghị ' + s.maSK : 'Thêm hội nghị / tập huấn';
+  $('skMa').value = s.maSK || ''; $('skTen').value = s.ten || ''; $('skDD').value = s.diaDiem || '';
+  $('skBD').value = s.batDau || ''; $('skKT').value = s.ketThuc || ''; $('skLat').value = s.viDo || ''; $('skLng').value = s.kinhDo || '';
+  $('skBK').value = s.banKinh || 200; $('skNhom').value = s.nhom || ''; $('skTT').value = s.trangThai || 'Mở';
+  $('skGPS').textContent = ''; capNhatBanDo(); window.scrollTo(0, 0);
+}
+async function luuSK(){
+  const s = { maSK: $('skMa').value, ten: $('skTen').value, diaDiem: $('skDD').value, batDau: $('skBD').value, ketThuc: $('skKT').value,
+    viDo: $('skLat').value, kinhDo: $('skLng').value, banKinh: $('skBK').value, nhom: $('skNhom').value, trangThai: $('skTT').value };
+  try { nhanDuLieu(await goi('adminLuuSuKien', s)); formSK(); bao('Đã lưu hội nghị'); } catch (e) { loi(e); }
+}
+function veSK(){
+  const gd = { dang: ['Đang diễn ra', 'b-xanh'], sap: ['Sắp diễn ra', 'b-vang'], xong: ['Đã kết thúc', 'b-xam'] };
+  $('dsSK').innerHTML = D.suKien.length ? D.suKien.slice().reverse().map(s => {
+    const g = s.trangThai === 'Đóng' ? ['Đã đóng', 'b-do'] : (gd[s.giaiDoan] || ['', '']);
+    return '<div class="sk-the"><h3>' + esc(s.ten) + ' <span class="badge ' + g[1] + '">' + g[0] + '</span></h3>' +
+      '<div class="nho">' + esc(s.maSK) + ' · ' + esc(s.diaDiem) + ' · ' + esc(s.batDauHT) + ' → ' + esc(s.ketThucHT) +
+      ' · Bán kính ' + esc(s.banKinh) + ' m · Nhóm: ' + esc(s.nhom || 'Tất cả') + '</div>' +
+      '<div class="hang"><button class="btn nho" onclick="xemKQ(\'' + s.maSK + '\')">Xem kết quả</button>' +
+      '<button class="btn nho phu" onclick="suaSK(\'' + s.maSK + '\')">Sửa</button>' +
+      '<button class="btn nho xam" onclick="doiTTSK(\'' + s.maSK + '\')">' + (s.trangThai === 'Đóng' ? 'Mở lại' : 'Đóng điểm danh') + '</button>' +
+      '<button class="btn nho phu" onclick="inPoster(\'' + s.maSK + '\')">🖨 In mã QR</button>' +
+      '<a class="btn nho xam" style="text-decoration:none" target="_blank" href="https://www.google.com/maps?q=' + s.viDo + ',' + s.kinhDo + '">Bản đồ</a>' +
+      '<button class="btn nho xam" onclick="xoaSK(\'' + s.maSK + '\')">Xóa</button></div></div>';
+  }).join('') : '<div class="nho">Chưa có hội nghị nào.</div>';
+}
+const timSK = ma => D.suKien.find(s => s.maSK === ma);
+function suaSK(ma){ formSK(timSK(ma)); }
+async function doiTTSK(ma){ const s = Object.assign({}, timSK(ma)); s.trangThai = s.trangThai === 'Đóng' ? 'Mở' : 'Đóng';
+  try { nhanDuLieu(await goi('adminLuuSuKien', s)); } catch (e) { loi(e); } }
+async function xoaSK(ma){ if (!confirm('Xóa hội nghị ' + ma + '? (Dữ liệu điểm danh đã ghi vẫn giữ trong Sheet)')) return;
+  try { nhanDuLieu(await goi('adminXoaSuKien', ma)); } catch (e) { loi(e); } }
+function xemKQ(ma){ $('kqSK').value = ma; moTab('tKQ'); }
+
+/* ---------- Đại biểu ---------- */
+async function themDB(){
+  const ds = $('dbDan').value.split(/\r?\n/).map(l => l.split('\t')).filter(c => c[0] && c[0].trim())
+    .map(c => ({ hoTen: c[0], chucVu: c[1] || '', donVi: c[2] || '', nhom: c[3] || '' }));
+  if (!ds.length) return bao('Chưa có dữ liệu. Sao chép các cột từ Excel rồi dán vào ô.');
+  try { nhanDuLieu(await goi('adminThemDaiBieu', ds)); $('dbDan').value = ''; bao('Đã thêm ' + ds.length + ' đại biểu'); } catch (e) { loi(e); }
+}
+function veLocNhom(){
+  const ds = [...new Set(D.daiBieu.flatMap(d => String(d.nhom || '').split(/[,;]/).map(x => x.trim()).filter(Boolean)))].sort();
+  const cu = $('dbLocNhom').value;
+  $('dbLocNhom').innerHTML = '<option value="">Mọi nhóm</option>' + ds.map(n => '<option>' + esc(n) + '</option>').join('');
+  $('dbLocNhom').value = ds.includes(cu) ? cu : '';
+}
+function dbLoc(){
+  const q = $('dbTim').value.trim().toLowerCase(), n = $('dbLocNhom').value, m = $('dbLocMat').value;
+  return D.daiBieu.filter(d => (!q || [d.maDB, d.hoTen, d.donVi, d.chucVu].join(' ').toLowerCase().includes(q)) &&
+    (!n || String(d.nhom || '').split(/[,;]/).map(x => x.trim()).includes(n)) &&
+    (!m || (m === 'cho' ? (d.soMau > 0 && d.nguon === 'Tự đăng ký' && !d.xacNhan) : m === 'co' ? d.soMau > 0 : !d.soMau)));
+}
+function veDB(){
+  const ds = dbLoc();
+  const cho = D.daiBieu.filter(d => d.soMau && d.nguon === 'Tự đăng ký' && !d.xacNhan).length;
+  $('dbDem').innerHTML = ds.length + '/' + D.daiBieu.length + ' đại biểu · ' + D.daiBieu.filter(d => d.soMau).length + ' đã đăng ký mặt' +
+    (cho ? ' · <b style="color:#b45309">' + cho + ' tự đăng ký chờ xác nhận</b>' : '');
+  $('dsDB').innerHTML = ds.map(d => '<tr><td>' + esc(d.maDB) + '</td><td><b>' + esc(d.hoTen) + '</b><div class="nho">' + esc(d.chucVu) + (d.donVi ? ' — ' + esc(d.donVi) : '') + '</div></td>' +
+    '<td>' + esc(d.nhom) + '</td><td>' + veTrangThaiMat(d) + '</td>' +
+    '<td>' + (d.soMau && d.nguon === 'Tự đăng ký' && !d.xacNhan ? '<button class="btn nho" onclick="xemAnhDB(\'' + d.maDB + '\')">Kiểm tra &amp; xác nhận</button> ' : '') +
+    '<button class="btn nho phu" onclick="moDangKy(\'' + d.maDB + '\')">Đăng ký mặt</button> ' +
+    '<button class="btn nho xam" onclick="menuDB(\'' + d.maDB + '\')">Khác…</button></td></tr>').join('');
+}
+const timDB = ma => D.daiBieu.find(d => d.maDB === ma);
+function veTrangThaiMat(d){
+  if (!d.soMau) return '<span class="badge b-do">Chưa</span>';
+  const tu = d.nguon === 'Tự đăng ký';
+  return '<span class="badge ' + (tu && !d.xacNhan ? 'b-vang' : 'b-xanh') + '">' + (tu ? (d.xacNhan ? 'Tự ĐK · đã xác nhận' : 'Tự ĐK · chờ xác nhận') : 'BTC đăng ký') + '</span>' +
+    '<div class="nho">' + d.soMau + ' mẫu · ' + esc(d.ngayDK) + (d.anhMau ? ' · <a href="#" onclick="xemAnhDB(\'' + d.maDB + '\');return false">xem ảnh</a>' : '') + '</div>';
+}
+
+function moModal(html){ $('modalNoiDung').innerHTML = html; $('modal').classList.remove('an'); }
+function dongModal(){ tatCam(); $('modal').classList.add('an'); }
+
+function menuDB(ma){
+  const d = timDB(ma);
+  moModal('<h2>' + esc(d.hoTen) + ' (' + esc(ma) + ')</h2>' +
+    '<label>Họ tên</label><input id="eTen" value="' + esc(d.hoTen) + '"><label>Chức vụ</label><input id="eCV" value="' + esc(d.chucVu) + '">' +
+    '<label>Đơn vị</label><input id="eDV" value="' + esc(d.donVi) + '"><label>Nhóm (nhiều nhóm cách nhau dấu phẩy)</label><input id="eNhom" value="' + esc(d.nhom) + '">' +
+    '<div class="hang"><button class="btn" onclick="suaDB(\'' + ma + '\')">Lưu thông tin</button><button class="btn xam" onclick="dongModal()">Đóng</button></div><hr>' +
+    '<div class="hang"><button class="btn nho phu" onclick="xoaMat(\'' + ma + '\', false)">Xóa khuôn mặt (cho đăng ký lại)</button>' +
+    '<button class="btn nho phu" onclick="xoaMat(\'' + ma + '\', true)">Hủy đăng ký sai người (hủy cả các lượt điểm danh)</button>' +
+    '<button class="btn nho xam" onclick="xoaDB(\'' + ma + '\')">Xóa đại biểu</button></div>');
+}
+async function suaDB(ma){ try { nhanDuLieu(await goi('adminSuaDaiBieu', { maDB: ma, hoTen: $('eTen').value, chucVu: $('eCV').value, donVi: $('eDV').value, nhom: $('eNhom').value })); dongModal(); bao('Đã lưu'); } catch (e) { loi(e); } }
+async function xoaMat(ma, huy){
+  if (!confirm(huy ? 'Hủy đăng ký khuôn mặt của ' + ma + ' và đánh dấu HỦY mọi lượt điểm danh thành công của người này?' : 'Xóa toàn bộ mẫu khuôn mặt của ' + ma + '? Lần quét tới, đại biểu sẽ phải đăng ký lại.')) return;
+  try { nhanDuLieu(await goi('adminXoaKhuonMat', ma, !!huy)); dongModal(); bao('Đã xử lý'); } catch (e) { loi(e); } }
+async function xacNhanDK(ma){ try { nhanDuLieu(await goi('adminXacNhanDangKy', ma)); dongModal(); bao('Đã xác nhận đăng ký'); } catch (e) { loi(e); } }
+async function xoaDB(ma){ if (!confirm('Xóa đại biểu ' + ma + ' khỏi danh sách?')) return;
+  try { nhanDuLieu(await goi('adminXoaDaiBieu', ma)); dongModal(); } catch (e) { loi(e); } }
+
+/* ---------- Mã QR chung & áp phích ---------- */
+function anhQR(text){ const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createDataURL(10, 2); }
+function inPoster(ma){
+  const s = timSK(ma);
+  $('vungIn').innerHTML = '<div class="pt-dau"><small>ỦY BAN MTTQ VIỆT NAM THÀNH PHỐ CẦN THƠ</small><b>ĐIỂM DANH ĐẠI BIỂU</b></div>' +
+    '<div class="pt-ten">' + esc(s.ten) + '</div><div class="pt-tt">' + esc(s.diaDiem || '') + ' · ' + esc(s.batDauHT) + '</div>' +
+    '<img class="pt-qr" src="' + anhQR(WEB_URL) + '">' +
+    '<div class="pt-bc"><b>1.</b> Mở camera điện thoại, quét mã QR trên<br><b>2.</b> Cho phép <b>Camera</b> và <b>Vị trí</b><br>' +
+    '<b>3.</b> Nhìn thẳng → quay nhẹ mặt → nhìn thẳng lại<br><b>4.</b> Lần đầu: chọn <b>Đơn vị</b> và <b>Họ tên</b> của mình để đăng ký</div>' +
+    '<div class="pt-chan">Mỗi người tự điểm danh bằng khuôn mặt của mình. Mọi lượt điểm danh đều được lưu ảnh và vị trí để đối chiếu.</div>';
+  setTimeout(() => window.print(), 300);
+}
+function saoChep(id){ const e = $(id); e.select(); try { document.execCommand('copy'); bao('Đã sao chép'); } catch (x) {} }
+
+/* ---------- Nhận diện khuôn mặt (đăng ký mẫu) ---------- */
+function taiMoHinh(){
+  if (modelsP) return modelsP;
+  modelsP = (async () => {
+    if (typeof faceapi === 'undefined') throw new Error('Không tải được thư viện nhận diện (kiểm tra mạng)');
+    const coGL = await faceapi.tf.setBackend('webgl').catch(() => false); if (!coGL) await faceapi.tf.setBackend('cpu');
+    await faceapi.tf.ready();
+    // Trang quản trị dùng thêm bộ dò SSD (chính xác hơn với ảnh chân dung, ảnh thẻ)
+    await Promise.all([faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL), faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL), faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)]);
+  })().catch(e => { modelsP = null; throw e; });
+  return modelsP;
+}
+function docAnh(file){
+  return new Promise((ok, loi) => { const img = new Image(); img.onload = () => {
+      const k = Math.min(1, 1024 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src); ok(c); };
+    img.onerror = () => loi(new Error('Không đọc được ảnh ' + file.name)); img.src = URL.createObjectURL(file); });
+}
+/** Trả về {desc, thumb} hoặc ném lỗi nếu không có / có nhiều hơn 1 khuôn mặt */
+async function phanTichMat(nguon){
+  let ds = await faceapi.detectAllFaces(nguon, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })).withFaceLandmarks().withFaceDescriptors();
+  if (!ds.length) ds = await faceapi.detectAllFaces(nguon, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.35 })).withFaceLandmarks().withFaceDescriptors();
+  if (!ds.length) throw new Error('không tìm thấy khuôn mặt');
+  // Nhiều mặt: chỉ chấp nhận khi có một mặt lớn vượt trội (ảnh cắt từ ảnh nhóm), ngược lại báo lỗi
+  ds.sort((a, b) => b.detection.box.area - a.detection.box.area);
+  if (ds.length > 1 && ds[1].detection.box.area > ds[0].detection.box.area * 0.4) throw new Error('có ' + ds.length + ' khuôn mặt cỡ tương đương — cần ảnh chỉ một người');
+  const b = ds[0].detection.box, w = nguon.videoWidth || nguon.width, h = nguon.videoHeight || nguon.height;
+  if (b.width < 60) throw new Error('khuôn mặt quá nhỏ, cần ảnh rõ hơn');
+  const m = b.width * 0.35, x = Math.max(0, b.x - m), y = Math.max(0, b.y - m * 1.3), cw = Math.min(w - x, b.width + 2 * m), ch = Math.min(h - y, b.height + 2.3 * m);
+  const c = document.createElement('canvas'); c.width = 200; c.height = Math.round(200 * ch / cw);
+  c.getContext('2d').drawImage(nguon, x, y, cw, ch, 0, 0, c.width, c.height);
+  return { desc: Array.from(ds[0].descriptor), thumb: c.toDataURL('image/jpeg', 0.8) };
+}
+function moDangKy(ma){
+  const d = timDB(ma);
+  moModal('<h2>Đăng ký khuôn mặt — ' + esc(d.hoTen) + '</h2>' +
+    '<p class="nho">Dùng ảnh chân dung rõ mặt, nhìn thẳng, không đeo khẩu trang/kính râm. Nên đăng ký 2–3 ảnh (khác thời điểm) để nhận diện ổn định.</p>' +
+    '<div class="hang"><label class="btn" style="margin:0;color:#fff">📁 Chọn ảnh (1–5 ảnh)<input type="file" accept="image/*" multiple class="an" onchange="dangKyTuAnh(\'' + ma + '\', this.files)"></label>' +
+    '<button class="btn phu" onclick="batCamDK(\'' + ma + '\')">📷 Chụp bằng camera</button></div>' +
+    '<label style="display:flex;gap:6px;align-items:center;color:var(--chu)"><input type="checkbox" id="giuCu" style="width:auto"' + (d.soMau ? '' : ' disabled') + '> Giữ các mẫu cũ (hiện có ' + d.soMau + ' mẫu)</label>' +
+    '<div id="dkCam" class="an" style="margin-top:10px"><div class="camk"><video id="dkVid" playsinline muted autoplay></video></div>' +
+    '<div class="hang"><button class="btn" id="btnChup" onclick="chupDK(\'' + ma + '\')">Chụp & lưu</button><span class="nho" id="dkCamTT"></span></div></div>' +
+    '<div id="dkTT" class="nho" style="margin-top:10px"></div>' +
+    '<div class="hang"><button class="btn xam" onclick="dongModal()">Đóng</button></div>');
+}
+async function luuMau(ma, ds){
+  const giu = $('giuCu') && $('giuCu').checked;
+  const r = await goi('adminLuuKhuonMat', ma, ds.map(x => x.desc), ds[0].thumb, !!giu);
+  const d = timDB(ma); d.soMau = r.soMau; d.anhMau = r.anhMau; veDB();
+  return r;
+}
+async function dangKyTuAnh(ma, files){
+  const tt = $('dkTT'); tt.textContent = 'Đang tải bộ nhận diện…';
+  try { await taiMoHinh(); } catch (e) { return tt.textContent = e.message; }
+  const ds = [], loiDs = [];
+  for (const f of [...files].slice(0, 5)){
+    tt.textContent = 'Đang phân tích ' + f.name + '…';
+    try { ds.push(await phanTichMat(await docAnh(f))); } catch (e) { loiDs.push(f.name + ': ' + e.message); }
+  }
+  if (!ds.length) return tt.innerHTML = '<span style="color:#b91c1c">Không ảnh nào dùng được.<br>' + loiDs.map(esc).join('<br>') + '</span>';
+  try { const r = await luuMau(ma, ds); tt.innerHTML = '<span style="color:#15803d">✔ Đã lưu ' + ds.length + ' ảnh (tổng ' + r.soMau + ' mẫu).</span>' + (loiDs.length ? '<br>Bỏ qua: ' + loiDs.map(esc).join('; ') : ''); }
+  catch (e) { tt.textContent = 'Lỗi lưu: ' + e.message; }
+}
+async function batCamDK(ma){
+  $('dkCam').classList.remove('an'); $('dkCamTT').textContent = 'Đang tải bộ nhận diện…';
+  try { await taiMoHinh(); camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 } }, audio: false }); }
+  catch (e) { return $('dkCamTT').textContent = 'Lỗi: ' + e.message; }
+  const v = $('dkVid'); v.srcObject = camStream; try { await v.play(); } catch (e) {}
+  $('dkCamTT').textContent = 'Người được đăng ký nhìn thẳng vào camera rồi bấm "Chụp & lưu".';
+}
+async function chupDK(ma){
+  const v = $('dkVid'), b = $('btnChup'); b.disabled = true;
+  const ds = [];
+  for (let i = 0; i < 6 && ds.length < 3; i++){
+    $('dkCamTT').textContent = 'Đang chụp ' + (ds.length + 1) + '/3…';
+    try { ds.push(await phanTichMat(v)); } catch (e) { $('dkCamTT').textContent = 'Ảnh ' + (i + 1) + ': ' + e.message; }
+    await ngu(350);
+  }
+  if (!ds.length){ b.disabled = false; return; }
+  try { const r = await luuMau(ma, ds); $('dkCamTT').innerHTML = '<span style="color:#15803d">✔ Đã lưu (tổng ' + r.soMau + ' mẫu)</span>'; tatCam(); }
+  catch (e) { $('dkCamTT').textContent = 'Lỗi lưu: ' + e.message; }
+  b.disabled = false;
+}
+function tatCam(){ if (camStream){ camStream.getTracks().forEach(t => t.stop()); camStream = null; } }
+
+async function dangKyHangLoat(files){
+  files = [...files]; if (!files.length) return;
+  $('nhatKyBox').classList.remove('an'); const nk = $('nhatKy');
+  const ghi = t => { nk.textContent += t + '\n'; nk.scrollTop = nk.scrollHeight; };
+  nk.textContent = ''; ghi('Đang tải bộ nhận diện…');
+  try { await taiMoHinh(); } catch (e) { return ghi('✖ ' + e.message); }
+  // gom ảnh theo mã đại biểu: DB0001.jpg, DB0001_2.jpg, DB0001 (2).jpg…
+  const nhom = {};
+  files.forEach(f => { const m = f.name.match(/^([A-Za-z]+\d+)/); const k = m ? m[1].toUpperCase() : null; (nhom[k] = nhom[k] || []).push(f); });
+  let ok = 0, hong = 0;
+  for (const k of Object.keys(nhom)){
+    const d = k !== 'null' && timDB(k);
+    if (!d){ nhom[k].forEach(f => ghi('✖ ' + f.name + ': không khớp mã đại biểu nào')); hong += nhom[k].length; continue; }
+    const ds = [];
+    for (const f of nhom[k].slice(0, 5)){
+      try { ds.push(await phanTichMat(await docAnh(f))); } catch (e) { ghi('✖ ' + f.name + ': ' + e.message); hong++; }
+    }
+    if (!ds.length) continue;
+    try { const r = await goi('adminLuuKhuonMat', k, ds.map(x => x.desc), ds[0].thumb, false); d.soMau = r.soMau; d.anhMau = r.anhMau; ok++; ghi('✔ ' + k + ' ' + d.hoTen + ': ' + ds.length + ' ảnh'); }
+    catch (e) { ghi('✖ ' + k + ': ' + e.message); hong++; }
+  }
+  ghi('— Xong: ' + ok + ' đại biểu đã đăng ký, ' + hong + ' ảnh lỗi.'); veDB();
+}
+
+/* ---------- Kết quả ---------- */
+function veChonSK(){
+  const cu = $('kqSK').value, ds = D.suKien.slice().reverse();
+  $('kqSK').innerHTML = ds.map(s => '<option value="' + esc(s.maSK) + '">' + esc(s.batDauHT + ' — ' + s.ten) + '</option>').join('');
+  const dang = ds.find(s => s.giaiDoan === 'dang');
+  $('kqSK').value = cu && timSK(cu) ? cu : dang ? dang.maSK : (ds[0] ? ds[0].maSK : '');
+}
+async function taiKQ(){
+  const ma = $('kqSK').value; if (!ma) return;
+  let r; try { r = await goi('adminKetQua', ma); } catch (e) { return loi(e); }
+  $('kqCN').textContent = 'Cập nhật ' + r.capNhat;
+  const tl = r.soMoi ? Math.round(r.thanhCong.length * 100 / r.soMoi) : 0;
+  $('kqSo').innerHTML = '<div><b>' + r.soMoi + '</b>Đại biểu được mời</div><div><b style="color:#15803d">' + r.thanhCong.length + '</b>Đã điểm danh (' + tl + '%)</div>' +
+    '<div><b>' + r.chua.length + '</b>Chưa điểm danh</div><div><b style="color:#b91c1c">' + r.tuChoi.length + '</b>Lượt bị từ chối</div>';
+  KQ = { ok: r.thanhCong, tc: r.tuChoi };
+  $('kqOK').innerHTML = r.thanhCong.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.gio) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + (x.tuDK && !x.xacNhan ? ' · <span style="color:#b45309">tự ĐK chờ xác nhận</span>' : '') + '</div></td><td>' + esc(x.donVi) + '</td><td>' + esc(x.kc) + '</td><td>' + esc(x.lech) + '</td><td><button class="btn nho xam" onclick="xemAnhKQ(\'ok\',' + i + ')">Xem ảnh</button></td></tr>').join('') || '<tr><td colspan="7" class="nho">Chưa có ai.</td></tr>';
+  $('kqChua').innerHTML = r.chua.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.maDB) + '</td><td>' + esc(x.hoTen) + '</td><td>' + esc(x.chucVu) + '</td><td>' + esc(x.donVi) + '</td><td>' + (x.coMat ? 'Đã có' : '<span class="nho">Chưa (sẽ tự đăng ký)</span>') + '</td></tr>').join('') || '<tr><td colspan="6" class="nho">Tất cả đã điểm danh.</td></tr>';
+   $('kqTC').innerHTML = r.tuChoi.map((x, i) => '<tr><td>' + esc(x.gio) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + '</div></td><td>' + esc(x.lyDo) + '</td><td>' + esc(x.kc) + '</td><td>' + esc(x.lech) + '</td><td><button class="btn nho xam" onclick="xemAnhKQ(\'tc\',' + i + ')">Xem ảnh</button></td></tr>').join('') || '<tr><td colspan="6" class="nho">Không có.</td></tr>';
+}
+function tuLamMoi(){ clearInterval(hengio); if ($('kqTu').checked) hengio = setInterval(() => { if (!$('tKQ').hidden) taiKQ(); }, 15000); }
+
+/* ---------- Cài đặt ---------- */
+async function luuCD(){
+  try { D.cauHinh = await goi('adminLuuCauHinh', { NGUONG_KHUON_MAT: $('cdMat').value, GPS_TOI_DA_M: $('cdGPS').value, PHUT_SOM: $('cdSom').value, PHUT_TRE: $('cdTre').value, DANG_KY_TAI_HOI_TRUONG: $('cdDKHT').value, TU_HOC_MAU: $('cdTuHoc').value }); bao('Đã lưu cài đặt'); }
+  catch (e) { loi(e); }
+}
+async function doiMK(){
+  const moi = $('cdMK').value;
+  try { await goi('adminDoiMatKhau', moi); MK = moi; $('cdMK').value = ''; bao('Đã đổi mật khẩu'); } catch (e) { loi(e); }
+}
+</script>
+</body>
+</html>

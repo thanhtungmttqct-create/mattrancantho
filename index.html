@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Điểm danh hội nghị</title>
+<style>
+  :root{--do:#c8102e;--do-dam:#9b0c23;--vang:#f5c518;--xanh:#15803d;--chu:#1f2937;--nhat:#6b7280;--nen:#f6f3ee}
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:var(--nen);color:var(--chu);-webkit-font-smoothing:antialiased}
+  header{background:linear-gradient(135deg,var(--do),var(--do-dam));color:#fff;padding:14px 16px 16px;text-align:center;border-bottom:4px solid var(--vang)}
+  header .cq{font-size:12px;letter-spacing:.04em;opacity:.92;text-transform:uppercase}
+  header h1{margin:4px 0 0;font-size:20px;letter-spacing:.02em}
+  main{max-width:520px;margin:0 auto;padding:14px}
+  .the{background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:12px}
+  h2{font-size:17px;margin:0 0 10px}
+  .goi-y{color:var(--nhat);font-size:14px;line-height:1.5}
+  .btn{display:block;width:100%;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:10px;font-family:inherit}
+  .btn-chinh{background:var(--do);color:#fff}
+  .btn-lon{padding:20px;font-size:19px}
+  .btn-phu{background:#fff;color:var(--do);border:1.5px solid var(--do)}
+  .btn:disabled{opacity:.45}
+  .lien-ket{background:none;border:0;color:var(--do);text-decoration:underline;font-size:14px;cursor:pointer;padding:6px 0;font-family:inherit}
+  .ten{font-size:22px;font-weight:700;color:var(--do-dam);margin:2px 0}
+  .cv{font-size:15px;margin:2px 0}
+  .sk{border-left:4px solid var(--vang);background:#fffbeb;padding:8px 10px;border-radius:6px;margin-top:10px;font-size:14px}
+  .sk b{display:block}
+  .cam{position:relative;width:100%;aspect-ratio:3/4;background:#000;border-radius:16px;overflow:hidden}
+  .cam video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  .oval{position:absolute;inset:12% 17% 18%;border:4px solid rgba(255,255,255,.85);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.35);transition:border-color .2s}
+  .oval.dat{border-color:#4ade80}
+  .loi-nhac{text-align:center;font-size:18px;font-weight:700;margin:12px 0 6px;min-height:26px}
+  .buoc{display:flex;gap:6px;justify-content:center;padding:0;margin:8px 0 0;list-style:none}
+  .buoc li{flex:1;text-align:center;font-size:12px;padding:6px 4px;border-radius:8px;background:#e5e7eb;color:var(--nhat)}
+  .buoc li.dang{background:var(--vang);color:#000;font-weight:700}
+  .buoc li.xong{background:#bbf7d0;color:#14532d}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:10px 0 0}
+  .chip{font-size:12px;padding:4px 10px;border-radius:999px;background:#e5e7eb;color:#374151}
+  .chip.ok{background:#dcfce7;color:#166534}.chip.loi{background:#fee2e2;color:#991b1b}
+  .xoay{width:46px;height:46px;border:5px solid #e5e7eb;border-top-color:var(--do);border-radius:50%;margin:20px auto;animation:x 1s linear infinite}
+  @keyframes x{to{transform:rotate(360deg)}}
+  .kq{text-align:center;padding:24px 16px}
+  .kq .icon{width:84px;height:84px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:48px;color:#fff}
+  .kq.thanh-cong .icon{background:var(--xanh)} .kq.that-bai .icon{background:var(--do)}
+  .kq h2{font-size:22px}
+  .kq ul{text-align:left;padding-left:20px;line-height:1.5;color:#7f1d1d}
+  .meta{font-size:14px;color:var(--nhat);margin-top:8px;line-height:1.6}
+  label.nhan{display:block;font-size:13px;color:var(--nhat);margin:12px 0 4px}
+  select,input[type=search]{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:10px;font-size:16px;font-family:inherit;background:#fff}
+  .ds-ten{max-height:320px;overflow:auto;margin-top:8px;border:1px solid #e5e7eb;border-radius:10px}
+  .ds-ten label{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-bottom:1px solid #f1f1f1;cursor:pointer}
+  .ds-ten label:last-child{border-bottom:0}
+  .ds-ten input{margin-top:3px;width:18px;height:18px;flex:none}
+  .ds-ten small{display:block;color:var(--nhat)}
+  .ds-ten label.chon{background:#fef3c7}
+  .cam-ket{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;margin-top:12px}
+  .cam-ket input{width:20px;height:20px;flex:none;margin-top:1px}
+  .anh-nho{width:72px;height:96px;object-fit:cover;border-radius:10px;flex:none}
+  footer{text-align:center;font-size:12px;color:var(--nhat);padding:10px 0 24px}
+</style>
+</head>
+<body>
+<header>
+  <div class="cq">Ủy ban MTTQ Việt Nam thành phố Cần Thơ</div>
+  <h1>ĐIỂM DANH HỘI NGHỊ</h1>
+</header>
+
+<main>
+  <div class="the" id="canhBaoApp" hidden style="background:#fef3c7;border:1px solid #f59e0b;font-size:14px;line-height:1.5">
+    Bạn đang mở trang trong ứng dụng <b id="tenApp"></b>. Để camera và định vị hoạt động ổn định, hãy bấm nút <b>⋯</b> ở góc trên → <b>Mở bằng trình duyệt</b> (Chrome/Safari).
+  </div>
+
+  <!-- 1. Màn hình chào -->
+  <section id="scrChao" class="scr" hidden>
+    <div class="the" id="chaoND"></div>
+    <div class="the" id="dsSK"><div class="goi-y">Đang tải thông tin hội nghị…</div></div>
+    <button class="btn btn-chinh btn-lon" onclick="batDauKhuonMat()">📷 ĐIỂM DANH BẰNG KHUÔN MẶT</button>
+  </section>
+
+  <!-- 2. Khuôn mặt -->
+  <section id="scrMat" class="scr" hidden>
+    <div class="cam"><video id="vid" playsinline muted autoplay></video><div class="oval" id="oval"></div></div>
+    <div class="loi-nhac" id="nhac">Đang mở camera…</div>
+    <ul class="buoc"><li id="b1">1. Nhìn thẳng</li><li id="b2">2. Quay nhẹ sang bên</li><li id="b3">3. Nhìn thẳng lại</li></ul>
+    <button class="btn btn-phu" id="btnThuLaiMat" hidden onclick="batDauKhuonMat()">Thử lại</button>
+  </section>
+
+  <!-- 3. Đăng ký lần đầu -->
+  <section id="scrDK" class="scr" hidden>
+    <div class="the">
+      <div style="display:flex;gap:12px;align-items:center">
+        <img id="dkAnh" class="anh-nho" alt="">
+        <div><h2 style="margin:0">Đăng ký lần đầu</h2>
+          <div class="goi-y">Hệ thống chưa có khuôn mặt của bạn. Hãy chọn đúng <b>đơn vị</b> và <b>họ tên</b> của mình. Ảnh này sẽ được lưu để nhận diện ở các lần điểm danh sau.</div></div>
+      </div>
+      <label class="nhan" for="dkDonVi">Đơn vị</label>
+      <select id="dkDonVi" onchange="veDsTen()"></select>
+      <label class="nhan" for="dkTim">Họ tên</label>
+      <input type="search" id="dkTim" placeholder="Gõ để tìm tên…" oninput="veDsTen()">
+      <div class="ds-ten" id="dkDs"></div>
+      <label class="cam-ket"><input type="checkbox" id="dkCamKet" onchange="capNhatNutDK()">
+        <span>Tôi xác nhận đây là khuôn mặt của chính tôi. Mỗi người chỉ được đăng ký một tên; đăng ký hộ hoặc nhận tên người khác sẽ bị Ban Tổ chức phát hiện qua ảnh lưu và xử lý.</span></label>
+      <button class="btn btn-chinh" id="btnDK" disabled onclick="guiDangKy()">Đăng ký &amp; điểm danh</button>
+      <button class="btn btn-phu" onclick="batDauKhuonMat()">Tôi đã đăng ký rồi — quét lại khuôn mặt</button>
+    </div>
+  </section>
+
+  <!-- 4. Chờ -->
+  <section id="scrCho" class="scr" hidden>
+    <div class="the" style="text-align:center"><div class="xoay"></div><div id="choTxt">Đang xử lý…</div></div>
+  </section>
+
+  <!-- 5. Kết quả -->
+  <section id="scrKQ" class="scr" hidden>
+    <div class="the kq" id="kq"></div>
+    <div id="kqNut"></div>
+  </section>
+
+  <div class="chips">
+    <span class="chip" id="chipAI">Nhận diện: đang tải…</span>
+    <span class="chip" id="chipGPS">Vị trí: đang xác định…</span>
+  </div>
+  <footer>Mỗi lần điểm danh đều được chụp ảnh, ghi vị trí và thời gian để đối chiếu.</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js"></script>
+<script>
+/* ======= DÁN ĐƯỜNG DẪN WEB APP APPS SCRIPT (kết thúc bằng /exec) VÀO ĐÂY ======= */
+const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnTipRPaNh_tuuXs95Bi9-NkDVRPWylV7Q7d9T8ULyHyyVTY64YVOGzn-eZ18JTRaGkz0O9jzgBkG-tjrd8pxyrc2p4TtY4ieZJjIaSaOLaxQbCDcJYPaPIkHAmxXUnAy52IaOm-5SvuLtbhjmhqxIdXGQfkCxDEh6ISy2EXL3r_SSQbzj-Lt8CuiY4DGwhk9y_8NlzwZzABnorNsRPxZsEDMn3J7RSGJLl-IjXYm6B2U2rJfCFMcM78w8rRrStYo8VxVQmfEvNxSZwsfQb42bULgY_KFA&lib=MOHHpIoiQQAnQy8srwf0ZAf29J1for0wG';
+/* ============================================================================== */
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model';
+// ?kiosk=1 : máy đặt tại bàn đón tiếp — không ghi nhớ người dùng, tự quay về sau mỗi lượt
+const KIOSK = new URLSearchParams(location.search).get('kiosk') === '1';
+const NHIN_THANG = 0.09, QUAY_MAT = 0.15;   // ngưỡng hướng mặt (0 = nhìn thẳng; ~0,18 ≈ mặt nghiêng 3/4)
+
+let modelsP = null, viTri = null, viTriLoi = null, watchId = null;
+let stream = null, phien = 0, demNguoc = null;
+let mau = null;          // { desc, anh, vt } — khuôn mặt vừa chụp, dùng lại khi đăng ký
+let dsDK = [], chonMa = '';
+
+const $ = id => document.getElementById(id);
+const ngu = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function hien(id){ document.querySelectorAll('.scr').forEach(s => s.hidden = s.id !== id); window.scrollTo(0,0); }
+function cho(txt){ $('choTxt').textContent = txt; hien('scrCho'); }
+function chip(id, txt, loai){ const c = $(id); c.textContent = txt; c.className = 'chip' + (loai ? ' ' + loai : ''); }
+async function goi(action, ...args){
+  const r = await fetch(API_URL, { method: 'POST', redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, args }) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.loi || 'Lỗi máy chủ');
+  return j.kq;
+}
+
+/* ---------- Ghi nhớ đại biểu trên thiết bị (chỉ để chào và ưu tiên so khớp) ---------- */
+function docNho(){ if (KIOSK) return null; try { return JSON.parse(localStorage.getItem('daiBieu') || 'null'); } catch(e){ return null; } }
+function ghiNho(r){ if (KIOSK || !r.maDB) return; try { localStorage.setItem('daiBieu', JSON.stringify({ maDB: r.maDB, hoTen: r.hoTen })); } catch(e){} }
+function quenNho(){ try { localStorage.removeItem('daiBieu'); } catch(e){} veChao(); }
+
+/* ---------- Màn hình chào ---------- */
+function veChao(){
+  if (demNguoc){ clearInterval(demNguoc); demNguoc = null; }
+  dungCamera(); mau = null;
+  const n = docNho();
+  $('chaoND').innerHTML = n
+    ? '<div class="goi-y">Xin chào</div><div class="ten">' + esc(n.hoTen) + '</div>' +
+      '<div class="goi-y">Bấm nút bên dưới và nhìn vào camera để điểm danh.</div>' +
+      '<button class="lien-ket" onclick="quenNho()">Không phải tôi?</button>'
+    : '<h2>Hướng dẫn</h2><div class="goi-y">1. Bấm <b>Điểm danh bằng khuôn mặt</b>, cho phép camera và vị trí.<br>' +
+      '2. Nhìn thẳng → quay nhẹ mặt sang bên → nhìn thẳng lại.<br>' +
+      '3. <b>Lần đầu tham dự:</b> chọn đơn vị và họ tên của bạn để đăng ký. Các lần sau chỉ cần quét khuôn mặt.</div>';
+  hien('scrChao');
+  goi('thongTinChung').then(r => {
+    $('dsSK').innerHTML = r.suKien.length
+      ? r.suKien.map(s => '<div class="sk" style="margin-top:0;margin-bottom:6px"><b>' + esc(s.ten) + '</b>' + esc(s.diaDiem || '') + ' · ' + esc(s.gio) + '</div>').join('')
+      : '<div class="goi-y">Hiện chưa có hội nghị nào đang mở điểm danh.</div>';
+  }).catch(e => { $('dsSK').innerHTML = '<div class="goi-y">Không kết nối được máy chủ: ' + esc(e.message) + '</div>'; });
+}
+
+/* ---------- Mô hình nhận diện ---------- */
+function taiMoHinh(){
+  if (modelsP) return modelsP;
+  modelsP = (async () => {
+    if (typeof faceapi === 'undefined') throw new Error('Không tải được thư viện nhận diện');
+    const coGL = await faceapi.tf.setBackend('webgl').catch(() => false); if (!coGL) await faceapi.tf.setBackend('cpu');
+    await faceapi.tf.ready();
+    await Promise.all([
+      faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+    ]);
+    chip('chipAI', 'Nhận diện: sẵn sàng', 'ok');
+  })().catch(e => { modelsP = null; chip('chipAI', 'Nhận diện: lỗi tải', 'loi'); throw e; });
+  return modelsP;
+}
+
+/* ---------- Định vị ---------- */
+function batDinhVi(){
+  if (!navigator.geolocation){ viTriLoi = 'Thiết bị không hỗ trợ định vị.'; chip('chipGPS','Vị trí: không hỗ trợ','loi'); return; }
+  if (watchId !== null) return;
+  viTriLoi = null;
+  watchId = navigator.geolocation.watchPosition(p => {
+    const c = p.coords, moi = { lat: c.latitude, lng: c.longitude, acc: c.accuracy, t: Date.now() };
+    if (!viTri || moi.acc <= viTri.acc * 1.5 || Date.now() - viTri.t > 15000) viTri = moi;
+    viTriLoi = null;
+    chip('chipGPS', 'Vị trí: sai số ±' + Math.round(viTri.acc) + ' m', viTri.acc <= 100 ? 'ok' : '');
+  }, e => {
+    viTriLoi = e.code === 1
+      ? 'Bạn chưa cho phép truy cập vị trí. Hãy bật Định vị trên điện thoại, cấp quyền vị trí cho trình duyệt rồi tải lại trang.'
+      : 'Chưa lấy được vị trí (' + e.message + ').';
+    chip('chipGPS', e.code === 1 ? 'Vị trí: chưa cấp quyền' : 'Vị trí: đang thử lại…', 'loi');
+    if (e.code === 1){ navigator.geolocation.clearWatch(watchId); watchId = null; }
+  }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+}
+function choViTri(ms){
+  return new Promise(xong => {
+    const t0 = Date.now();
+    (function lap(){
+      const moi = viTri && Date.now() - viTri.t < 60000;
+      if (moi && viTri.acc <= 30) return xong(viTri);
+      if (Date.now() - t0 > ms || (viTriLoi && watchId === null)) return xong(moi ? viTri : null);
+      setTimeout(lap, 300);
+    })();
+  });
+}
+
+/* ---------- Quét khuôn mặt + kiểm tra người thật ---------- */
+function dungCamera(){ phien++; if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; } }
+function nhac(t){ $('nhac').textContent = t; }
+function datBuoc(n){ [1,2,3].forEach(i => $('b'+i).className = i < n ? 'xong' : i === n ? 'dang' : ''); }
+
+async function batDauKhuonMat(){
+  if (demNguoc){ clearInterval(demNguoc); demNguoc = null; }
+  dungCamera(); hien('scrMat'); $('btnThuLaiMat').hidden = true; datBuoc(0); nhac('Đang tải bộ nhận diện…');
+  batDinhVi();
+  try { await taiMoHinh(); }
+  catch (e) { return ketQuaLoi(['Không tải được bộ nhận diện khuôn mặt. Kiểm tra kết nối mạng rồi thử lại.'], true); }
+  nhac('Đang mở camera…');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+  } catch (e) {
+    return ketQuaLoi(['Không mở được camera trước' + (e.name === 'NotAllowedError' ? ': bạn chưa cấp quyền camera cho trình duyệt.' : ': ' + e.message)], true);
+  }
+  const v = $('vid'); v.srcObject = stream;
+  try { await v.play(); } catch (e) {}
+  if (v.readyState < 2) await new Promise(r => v.onloadeddata = r);
+  kiemTraNguoiThat(++phien);
+}
+
+/** Tỉ lệ vị trí mũi giữa hai bên quai hàm: ~0 khi nhìn thẳng, |x| lớn khi quay mặt. */
+function huongMat(lm){ const p = lm.positions, l = p[0].x, r = p[16].x; return (p[30].x - l) / (r - l) - 0.5; }
+
+async function kiemTraNguoiThat(id){
+  const v = $('vid'), oval = $('oval'), opt = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5, maxResults: 3 });
+  let buoc = 1, dem = 0; const t0 = Date.now(); datBuoc(1);
+  while (id === phien){
+    if (Date.now() - t0 > 45000){ nhac('Hết thời gian. Bấm "Thử lại".'); $('btnThuLaiMat').hidden = false; dungCamera(); return; }
+    let ds = [];
+    try { ds = await faceapi.detectAllFaces(v, opt).withFaceLandmarks(); } catch (e) {}
+    if (id !== phien) return;
+    oval.classList.remove('dat');
+    if (!ds.length){ nhac('Đưa khuôn mặt vào giữa khung'); dem = 0; await ngu(80); continue; }
+    if (ds.length > 1){ nhac('Chỉ để MỘT người trong khung hình'); dem = 0; await ngu(80); continue; }
+    const f = ds[0];
+    if (f.detection.box.width < v.videoWidth * 0.25){ nhac('Đưa mặt lại gần camera hơn'); dem = 0; await ngu(80); continue; }
+    const yaw = huongMat(f.landmarks);
+    if (buoc === 1){
+      nhac('Nhìn thẳng vào camera');
+      if (Math.abs(yaw) < NHIN_THANG){ oval.classList.add('dat'); if (++dem >= 3){ buoc = 2; dem = 0; datBuoc(2); } } else dem = 0;
+    } else if (buoc === 2){
+      nhac('Từ từ quay mặt sang trái hoặc phải');
+      if (Math.abs(yaw) > QUAY_MAT){ if (++dem >= 2){ buoc = 3; dem = 0; datBuoc(3); } }
+    } else {
+      nhac('Nhìn thẳng lại vào camera');
+      if (Math.abs(yaw) < NHIN_THANG){ oval.classList.add('dat'); if (++dem >= 2){ datBuoc(4); return chupVaGui(id); } } else dem = 0;
+    }
+    await ngu(50);
+  }
+}
+
+async function chupVaGui(id){
+  nhac('Giữ yên — đang xác thực…');
+  const v = $('vid'), opt = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 });
+  const ds = [];
+  for (let i = 0; i < 5 && ds.length < 3; i++){
+    const r = await faceapi.detectSingleFace(v, opt).withFaceLandmarks().withFaceDescriptor();
+    if (id !== phien) return;
+    if (r && Math.abs(huongMat(r.landmarks)) < NHIN_THANG + 0.04) ds.push(r.descriptor);
+  }
+  if (!ds.length){ nhac('Không chụp được khuôn mặt rõ. Bấm "Thử lại".'); $('btnThuLaiMat').hidden = false; dungCamera(); return; }
+  const tb = new Array(128).fill(0);
+  ds.forEach(d => d.forEach((x, i) => tb[i] += x / ds.length));
+  const anh = chupAnh(v);
+  dungCamera();
+
+  cho('Đang xác định vị trí của bạn…');
+  const vt = await choViTri(15000);
+  mau = { desc: tb.map(x => Math.round(x * 1e5) / 1e5), anh, vt };
+  cho('Đang nhận diện…');
+  const n = docNho();
+  let r;
+  try { r = await goi('diemDanh', Object.assign(goiViTri(), { desc: mau.desc, goiY: n ? n.maDB : '', anh })); }
+  catch (e) { return ketQuaLoi(['Lỗi kết nối máy chủ: ' + e.message], true); }
+  if (!r.ok && r.chuaNhanRa) return moDangKy();
+  hienKetQua(r);
+}
+function goiViTri(){ const vt = mau && mau.vt; return { lat: vt ? vt.lat : null, lng: vt ? vt.lng : null, acc: vt ? vt.acc : null, ua: navigator.userAgent.slice(0, 180) }; }
+
+function chupAnh(v){
+  const w = 360, h = Math.round(w * v.videoHeight / v.videoWidth);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  c.getContext('2d').drawImage(v, 0, 0, w, h);
+  return c.toDataURL('image/jpeg', 0.75);
+}
+
+/* ---------- Đăng ký lần đầu ---------- */
+async function moDangKy(){
+  cho('Đang tải danh sách đại biểu…');
+  let r;
+  try { r = await goi('dsChuaDangKy'); } catch (e) { return ketQuaLoi(['Lỗi kết nối máy chủ: ' + e.message], true); }
+  if (!r.ds.length) return ketQuaLoi(['Chưa nhận ra khuôn mặt của bạn.', r.loi || 'Không còn tên nào chờ đăng ký trong danh sách. Vui lòng liên hệ Ban Tổ chức.'], true);
+  dsDK = r.ds; chonMa = '';
+  const dv = [...new Set(dsDK.map(x => x.donVi))];
+  $('dkDonVi').innerHTML = '<option value="">— Tất cả đơn vị (' + dsDK.length + ' người) —</option>' + dv.map(d => '<option>' + esc(d) + '</option>').join('');
+  $('dkTim').value = ''; $('dkCamKet').checked = false; $('dkAnh').src = mau.anh;
+  veDsTen(); capNhatNutDK(); hien('scrDK');
+}
+function boDau(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase(); }
+function veDsTen(){
+  const dv = $('dkDonVi').value, q = boDau($('dkTim').value.trim());
+  const ds = dsDK.filter(x => (!dv || x.donVi === dv) && (!q || boDau(x.hoTen).includes(q)));
+  $('dkDs').innerHTML = ds.length ? ds.map(x => '<label class="' + (x.maDB === chonMa ? 'chon' : '') + '"><input type="radio" name="dkTen" value="' + esc(x.maDB) + '"' +
+    (x.maDB === chonMa ? ' checked' : '') + ' onchange="chonTen(this.value)"><span><b>' + esc(x.hoTen) + '</b><small>' + esc(x.chucVu || '') +
+    (x.chucVu ? ' — ' : '') + esc(x.donVi) + '</small></span></label>').join('')
+    : '<div class="goi-y" style="padding:12px">Không tìm thấy. Nếu tên bạn không có trong danh sách, vui lòng liên hệ Ban Tổ chức.</div>';
+}
+function chonTen(ma){ chonMa = ma; veDsTen(); capNhatNutDK(); }
+function capNhatNutDK(){ $('btnDK').disabled = !(chonMa && $('dkCamKet').checked); }
+async function guiDangKy(){
+  const x = dsDK.find(d => d.maDB === chonMa);
+  if (!x || !confirm('Đăng ký khuôn mặt cho:\n\n' + x.hoTen + '\n' + x.donVi + '\n\nSau khi đăng ký, tên này sẽ gắn với khuôn mặt của bạn.')) return;
+  cho('Đang đăng ký…');
+  let r;
+  try { r = await goi('dangKy', Object.assign(goiViTri(), { maDB: chonMa, desc: mau.desc, anh: mau.anh })); }
+  catch (e) { return ketQuaLoi(['Lỗi kết nối máy chủ: ' + e.message], true); }
+  hienKetQua(r);
+}
+
+/* ---------- Kết quả ---------- */
+function nutKetQua(choThuLai){
+  let h = '';
+  if (choThuLai) h += '<button class="btn btn-chinh" onclick="batDauKhuonMat()">Thử lại</button>';
+  h += '<button class="btn btn-phu" onclick="veChao()" id="btnVe">Về màn hình chính</button>';
+  $('kqNut').innerHTML = h;
+}
+function hienKetQua(r){
+  if (r.dangKyMoi) ghiNho(r);
+  if (r.ok){
+    ghiNho(r);
+    const tieuDe = r.chiDangKy ? 'Đăng ký khuôn mặt thành công' : r.daCo ? 'Bạn đã điểm danh trước đó' :
+                   r.dangKyMoi ? 'Đăng ký & điểm danh thành công' : 'Điểm danh thành công';
+    $('kq').className = 'the kq thanh-cong';
+    $('kq').innerHTML = '<div class="icon">✔</div><h2>' + tieuDe + '</h2>' +
+      '<div class="ten">' + esc(r.hoTen) + '</div>' + (r.chucVu ? '<div class="cv">' + esc(r.chucVu) + '</div>' : '') +
+      '<div class="meta">' + (r.tenSK ? esc(r.tenSK) + '<br>' : '') + 'Thời gian: ' + esc(r.thoiGian) +
+      (r.khoangCach != null && !r.daCo ? '<br>Cách điểm hội nghị: ' + r.khoangCach + ' m' : '') +
+      (r.chiDangKy ? '<br>Hiện chưa có hội nghị đang mở; lần sau bạn chỉ cần quét khuôn mặt.' : '') + '</div>';
+    nutKetQua(false);
+    hien('scrKQ');
+    if (KIOSK){ // máy tại bàn đón tiếp: tự quay về cho người tiếp theo
+      let s = 6; const b = $('btnVe');
+      demNguoc = setInterval(() => { s--; if (b) b.textContent = 'Người tiếp theo (' + s + ')'; if (s <= 0) veChao(); }, 1000);
+    }
+  } else {
+    ketQuaLoi(r.lyDo && r.lyDo.length ? r.lyDo : ['Không xác nhận được.'], true, r.hoTen);
+  }
+}
+function ketQuaLoi(ds, choThuLai, hoTen){
+  dungCamera();
+  $('kq').className = 'the kq that-bai';
+  $('kq').innerHTML = '<div class="icon">✖</div><h2>Chưa điểm danh được</h2>' +
+    (hoTen ? '<div class="ten">' + esc(hoTen) + '</div>' : '') +
+    '<ul>' + ds.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>';
+  nutKetQua(!!choThuLai);
+  hien('scrKQ');
+}
+
+/* ---------- Khởi động ---------- */
+window.addEventListener('load', () => {
+  const app = (navigator.userAgent.match(/Zalo|FBAN|FBAV|Instagram|Line\//i) || [])[0];
+  if (app){ $('tenApp').textContent = /zalo/i.test(app) ? 'Zalo' : /line/i.test(app) ? 'LINE' : 'Facebook/Instagram'; $('canhBaoApp').hidden = false; }
+  taiMoHinh().catch(() => {});
+  batDinhVi();
+  veChao();
+});
+</script>
+</body>
+</html>
