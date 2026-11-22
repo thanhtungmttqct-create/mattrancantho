@@ -31,10 +31,8 @@
   .oval{position:absolute;inset:12% 17% 18%;border:4px solid rgba(255,255,255,.85);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.35);transition:border-color .2s}
   .oval.dat{border-color:#4ade80}
   .loi-nhac{text-align:center;font-size:18px;font-weight:700;margin:12px 0 6px;min-height:26px}
-  .buoc{display:flex;gap:6px;justify-content:center;padding:0;margin:8px 0 0;list-style:none}
-  .buoc li{flex:1;text-align:center;font-size:12px;padding:6px 4px;border-radius:8px;background:#e5e7eb;color:var(--nhat)}
-  .buoc li.dang{background:var(--vang);color:#000;font-weight:700}
-  .buoc li.xong{background:#bbf7d0;color:#14532d}
+  .tien-do{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:8px 0 0}
+  .tien-do div{height:100%;width:0;background:var(--xanh);transition:width .15s}
   .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:10px 0 0}
   .chip{font-size:12px;padding:4px 10px;border-radius:999px;background:#e5e7eb;color:#374151}
   .chip.ok{background:#dcfce7;color:#166534}.chip.loi{background:#fee2e2;color:#991b1b}
@@ -82,7 +80,7 @@
   <section id="scrMat" class="scr" hidden>
     <div class="cam"><video id="vid" playsinline muted autoplay></video><div class="oval" id="oval"></div></div>
     <div class="loi-nhac" id="nhac">Đang mở camera…</div>
-    <ul class="buoc"><li id="b1">1. Nhìn thẳng</li><li id="b2">2. Quay nhẹ sang bên</li><li id="b3">3. Nhìn thẳng lại</li></ul>
+    <div class="tien-do"><div id="tienDo"></div></div>
     <button class="btn btn-phu" id="btnThuLaiMat" hidden onclick="batDauKhuonMat()">Thử lại</button>
   </section>
 
@@ -132,7 +130,8 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbweVW70kfGNx-RMSTIbqViS
 const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model';
 // ?kiosk=1 : máy đặt tại bàn đón tiếp — không ghi nhớ người dùng, tự quay về sau mỗi lượt
 const KIOSK = new URLSearchParams(location.search).get('kiosk') === '1';
-const NHIN_THANG = 0.09, QUAY_MAT = 0.15;   // ngưỡng hướng mặt (0 = nhìn thẳng; ~0,18 ≈ mặt nghiêng 3/4)
+const NHIN_THANG = 0.12;   // độ lệch hướng mặt tối đa coi là nhìn thẳng (0 = chính diện; ~0,18 ≈ mặt nghiêng 3/4)
+const SO_KHUNG_ON_DINH = 5; // số khung hình liên tiếp nhìn thẳng trước khi chụp (~1 giây)
 
 let modelsP = null, viTri = null, viTriLoi = null, watchId = null;
 let stream = null, phien = 0, demNguoc = null;
@@ -168,7 +167,7 @@ function veChao(){
       '<div class="goi-y">Bấm nút bên dưới và nhìn vào camera để điểm danh.</div>' +
       '<button class="lien-ket" onclick="quenNho()">Không phải tôi?</button>'
     : '<h2>Hướng dẫn</h2><div class="goi-y">1. Bấm <b>Điểm danh bằng khuôn mặt</b>, cho phép camera và vị trí.<br>' +
-      '2. Nhìn thẳng → quay nhẹ mặt sang bên → nhìn thẳng lại.<br>' +
+      '2. Nhìn thẳng vào camera, giữ yên khoảng 1 giây.<br>' +
       '3. <b>Lần đầu tham dự:</b> chọn đơn vị và họ tên của bạn để đăng ký. Các lần sau chỉ cần quét khuôn mặt.</div>';
   hien('scrChao');
   goi('thongTinChung').then(r => {
@@ -228,11 +227,11 @@ function choViTri(ms){
 /* ---------- Quét khuôn mặt + kiểm tra người thật ---------- */
 function dungCamera(){ phien++; if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; } }
 function nhac(t){ $('nhac').textContent = t; }
-function datBuoc(n){ [1,2,3].forEach(i => $('b'+i).className = i < n ? 'xong' : i === n ? 'dang' : ''); }
+function datTienDo(n){ $('tienDo').style.width = Math.min(100, Math.round(n * 100 / SO_KHUNG_ON_DINH)) + '%'; }
 
 async function batDauKhuonMat(){
   if (demNguoc){ clearInterval(demNguoc); demNguoc = null; }
-  dungCamera(); hien('scrMat'); $('btnThuLaiMat').hidden = true; datBuoc(0); nhac('Đang tải bộ nhận diện…');
+  dungCamera(); hien('scrMat'); $('btnThuLaiMat').hidden = true; datTienDo(0); nhac('Đang tải bộ nhận diện…');
   batDinhVi();
   try { await taiMoHinh(); }
   catch (e) { return ketQuaLoi(['Không tải được bộ nhận diện khuôn mặt. Kiểm tra kết nối mạng rồi thử lại.'], true); }
@@ -251,30 +250,24 @@ async function batDauKhuonMat(){
 /** Tỉ lệ vị trí mũi giữa hai bên quai hàm: ~0 khi nhìn thẳng, |x| lớn khi quay mặt. */
 function huongMat(lm){ const p = lm.positions, l = p[0].x, r = p[16].x; return (p[30].x - l) / (r - l) - 0.5; }
 
+/** Chỉ cần nhìn thẳng (chính diện) và giữ yên vài khung hình liên tiếp rồi tự chụp. */
 async function kiemTraNguoiThat(id){
   const v = $('vid'), oval = $('oval'), opt = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5, maxResults: 3 });
-  let buoc = 1, dem = 0; const t0 = Date.now(); datBuoc(1);
+  let dem = 0; const t0 = Date.now(); datTienDo(0);
   while (id === phien){
     if (Date.now() - t0 > 45000){ nhac('Hết thời gian. Bấm "Thử lại".'); $('btnThuLaiMat').hidden = false; dungCamera(); return; }
     let ds = [];
     try { ds = await faceapi.detectAllFaces(v, opt).withFaceLandmarks(); } catch (e) {}
     if (id !== phien) return;
     oval.classList.remove('dat');
-    if (!ds.length){ nhac('Đưa khuôn mặt vào giữa khung'); dem = 0; await ngu(80); continue; }
-    if (ds.length > 1){ nhac('Chỉ để MỘT người trong khung hình'); dem = 0; await ngu(80); continue; }
-    const f = ds[0];
-    if (f.detection.box.width < v.videoWidth * 0.25){ nhac('Đưa mặt lại gần camera hơn'); dem = 0; await ngu(80); continue; }
-    const yaw = huongMat(f.landmarks);
-    if (buoc === 1){
-      nhac('Nhìn thẳng vào camera');
-      if (Math.abs(yaw) < NHIN_THANG){ oval.classList.add('dat'); if (++dem >= 3){ buoc = 2; dem = 0; datBuoc(2); } } else dem = 0;
-    } else if (buoc === 2){
-      nhac('Từ từ quay mặt sang trái hoặc phải');
-      if (Math.abs(yaw) > QUAY_MAT){ if (++dem >= 2){ buoc = 3; dem = 0; datBuoc(3); } }
-    } else {
-      nhac('Nhìn thẳng lại vào camera');
-      if (Math.abs(yaw) < NHIN_THANG){ oval.classList.add('dat'); if (++dem >= 2){ datBuoc(4); return chupVaGui(id); } } else dem = 0;
-    }
+    let loi = '';
+    if (!ds.length) loi = 'Đưa khuôn mặt vào giữa khung';
+    else if (ds.length > 1) loi = 'Chỉ để MỘT người trong khung hình';
+    else if (ds[0].detection.box.width < v.videoWidth * 0.25) loi = 'Đưa mặt lại gần camera hơn';
+    else if (Math.abs(huongMat(ds[0].landmarks)) >= NHIN_THANG) loi = 'Nhìn thẳng vào camera';
+    if (loi){ nhac(loi); dem = 0; datTienDo(0); await ngu(80); continue; }
+    oval.classList.add('dat'); nhac('Giữ yên…'); datTienDo(++dem);
+    if (dem >= SO_KHUNG_ON_DINH) return chupVaGui(id);
     await ngu(50);
   }
 }
