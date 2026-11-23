@@ -45,7 +45,8 @@
   .kq ul{text-align:left;padding-left:20px;line-height:1.5;color:#7f1d1d}
   .meta{font-size:14px;color:var(--nhat);margin-top:8px;line-height:1.6}
   label.nhan{display:block;font-size:13px;color:var(--nhat);margin:12px 0 4px}
-  select,input[type=search]{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:10px;font-size:16px;font-family:inherit;background:#fff}
+  .tuy-chon{font-weight:400;color:#9ca3af}
+  select,input[type=search],input[type=text],input[type=tel]{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:10px;font-size:16px;font-family:inherit;background:#fff}
   .ds-ten{max-height:320px;overflow:auto;margin-top:8px;border:1px solid #e5e7eb;border-radius:10px}
   .ds-ten label{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-bottom:1px solid #f1f1f1;cursor:pointer}
   .ds-ten label:last-child{border-bottom:0}
@@ -73,7 +74,25 @@
   <section id="scrChao" class="scr" hidden>
     <div class="the" id="chaoND"></div>
     <div class="the" id="dsSK"><div class="goi-y">Đang tải thông tin hội nghị…</div></div>
-    <button class="btn btn-chinh btn-lon" onclick="batDauKhuonMat()">📷 ĐIỂM DANH BẰNG KHUÔN MẶT</button>
+    <button class="btn btn-chinh btn-lon" onclick="batDauDiemDanh()">📷 ĐIỂM DANH BẰNG KHUÔN MẶT</button>
+    <button class="btn btn-phu" id="btnTruoc" hidden onclick="moDangKyTruoc()">📝 Đăng ký trước / Cập nhật thông tin<br><small style="font-weight:400">(làm ở nhà, trước ngày hội nghị)</small></button>
+  </section>
+
+  <!-- 1b. Đăng ký trước tại nhà -->
+  <section id="scrTruoc" class="scr" hidden>
+    <div class="the">
+      <h2>Đăng ký trước tại nhà</h2>
+      <div class="goi-y">Bạn có thể làm bước này ở bất kỳ đâu, trước ngày hội nghị:<br>
+        • <b>Lần đầu:</b> quét khuôn mặt, chọn đơn vị và họ tên của mình, cập nhật chức vụ, số điện thoại.<br>
+        • <b>Đã đăng ký:</b> quét khuôn mặt để xem và sửa thông tin.<br>
+        <b>Lưu ý:</b> bước này <u>chưa phải điểm danh</u>. Khi đến hội trường, mở lại trang và bấm <b>Điểm danh bằng khuôn mặt</b>; hệ thống sẽ tự nhận ra bạn.</div>
+      <div id="khungMa" hidden>
+        <label class="nhan" for="maDK">Mã đăng ký (ghi trên giấy mời)</label>
+        <input type="text" id="maDK" autocomplete="off" autocapitalize="characters" placeholder="Nhập mã…">
+      </div>
+      <button class="btn btn-chinh" onclick="batDauTruoc()">📷 Bắt đầu quét khuôn mặt</button>
+      <button class="btn btn-phu" onclick="veChao()">Quay lại</button>
+    </div>
   </section>
 
   <!-- 2. Khuôn mặt -->
@@ -97,10 +116,33 @@
       <label class="nhan" for="dkTim">Họ tên</label>
       <input type="search" id="dkTim" placeholder="Gõ để tìm tên…" oninput="veDsTen()">
       <div class="ds-ten" id="dkDs"></div>
+      <div id="dkThem" hidden>
+        <label class="nhan" for="dkChucVu">Chức vụ <span class="tuy-chon">(sửa nếu chưa đúng)</span></label>
+        <input type="text" id="dkChucVu" maxlength="150">
+        <label class="nhan" for="dkSdt">Số điện thoại <span class="tuy-chon">(không bắt buộc)</span></label>
+        <input type="tel" id="dkSdt" inputmode="tel" maxlength="15" placeholder="09xxxxxxxx">
+      </div>
       <label class="cam-ket"><input type="checkbox" id="dkCamKet" onchange="capNhatNutDK()">
         <span>Tôi xác nhận đây là khuôn mặt của chính tôi. Mỗi người chỉ được đăng ký một tên; đăng ký hộ hoặc nhận tên người khác sẽ bị Ban Tổ chức phát hiện qua ảnh lưu và xử lý.</span></label>
       <button class="btn btn-chinh" id="btnDK" disabled onclick="guiDangKy()">Đăng ký &amp; điểm danh</button>
       <button class="btn btn-phu" onclick="batDauKhuonMat()">Tôi đã đăng ký rồi — quét lại khuôn mặt</button>
+    </div>
+  </section>
+
+  <!-- 3b. Hồ sơ đã đăng ký (cập nhật thông tin) -->
+  <section id="scrHoSo" class="scr" hidden>
+    <div class="the">
+      <div style="display:flex;gap:12px;align-items:center">
+        <img id="hsAnh" class="anh-nho" alt="">
+        <div><div class="goi-y">Bạn đã đăng ký khuôn mặt</div><div class="ten" id="hsTen"></div><div class="goi-y" id="hsDonVi"></div></div>
+      </div>
+      <label class="nhan" for="hsChucVu">Chức vụ</label>
+      <input type="text" id="hsChucVu" maxlength="150">
+      <label class="nhan" for="hsSdt">Số điện thoại <span class="tuy-chon">(không bắt buộc)</span></label>
+      <input type="tel" id="hsSdt" inputmode="tel" maxlength="15" placeholder="09xxxxxxxx">
+      <div class="goi-y" style="margin-top:10px">Họ tên hoặc đơn vị chưa đúng? Vui lòng báo Ban Tổ chức sửa.</div>
+      <button class="btn btn-chinh" onclick="luuHoSo()">Lưu thông tin</button>
+      <button class="btn btn-phu" onclick="veChao()">Không thay đổi — về màn hình chính</button>
     </div>
   </section>
 
@@ -132,6 +174,10 @@ const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/mode
 const KIOSK = new URLSearchParams(location.search).get('kiosk') === '1';
 const NHIN_THANG = 0.12;   // độ lệch hướng mặt tối đa coi là nhìn thẳng (0 = chính diện; ~0,18 ≈ mặt nghiêng 3/4)
 const SO_KHUNG_ON_DINH = 5; // số khung hình liên tiếp nhìn thẳng trước khi chụp (~1 giây)
+// ?dk=1 : mở thẳng màn "Đăng ký trước" (dùng cho mã QR in trên giấy mời)
+const MO_DANG_KY_TRUOC = new URLSearchParams(location.search).get('dk') === '1' && !KIOSK;
+let cheDo = 'diemDanh';   // 'diemDanh' (tại hội trường) | 'truoc' (đăng ký/cập nhật tại nhà)
+let maDK = '', canMa = false, hoSo = null;
 
 let modelsP = null, viTri = null, viTriLoi = null, watchId = null;
 let stream = null, phien = 0, demNguoc = null;
@@ -158,7 +204,7 @@ function ghiNho(r){ if (KIOSK || !r.maDB) return; try { localStorage.setItem('da
 function quenNho(){ try { localStorage.removeItem('daiBieu'); } catch(e){} veChao(); }
 
 /* ---------- Màn hình chào ---------- */
-function veChao(){
+function veChao(vaoDangKyTruoc){
   if (demNguoc){ clearInterval(demNguoc); demNguoc = null; }
   dungCamera(); mau = null;
   const n = docNho();
@@ -171,6 +217,9 @@ function veChao(){
       '3. <b>Lần đầu tham dự:</b> chọn đơn vị và họ tên của bạn để đăng ký. Các lần sau chỉ cần quét khuôn mặt.</div>';
   hien('scrChao');
   goi('thongTinChung').then(r => {
+    canMa = !!r.canMa;
+    $('btnTruoc').hidden = KIOSK || !r.dangKyTruoc;
+    if (vaoDangKyTruoc === true) r.dangKyTruoc ? moDangKyTruoc() : alert('Ban Tổ chức chưa mở đăng ký trước. Vui lòng đăng ký khi đến hội trường.');
     $('dsSK').innerHTML = r.suKien.length
       ? r.suKien.map(s => '<div class="sk" style="margin-top:0;margin-bottom:6px"><b>' + esc(s.ten) + '</b>' + esc(s.diaDiem || '') + ' · ' + esc(s.gio) + '</div>').join('')
       : '<div class="goi-y">Hiện chưa có hội nghị nào đang mở điểm danh.</div>';
@@ -224,6 +273,22 @@ function choViTri(ms){
   });
 }
 
+/* ---------- Chọn chế độ ---------- */
+function batDauDiemDanh(){ cheDo = 'diemDanh'; batDauKhuonMat(); }
+function moDangKyTruoc(){
+  dungCamera(); $('khungMa').hidden = !canMa; hien('scrTruoc');
+  try { $('maDK').value = maDK || sessionStorage.getItem('maDK') || ''; } catch (e) {}
+}
+async function batDauTruoc(){
+  maDK = $('maDK').value.trim();
+  cho('Đang kiểm tra…');
+  let r;
+  try { r = await goi('kiemTraMaDangKy', maDK); } catch (e) { return ketQuaLoi(['Lỗi kết nối máy chủ: ' + e.message]); }
+  if (!r.ok){ moDangKyTruoc(); return alert(r.loi); }
+  try { sessionStorage.setItem('maDK', maDK); } catch (e) {}
+  cheDo = 'truoc'; batDauKhuonMat();
+}
+
 /* ---------- Quét khuôn mặt + kiểm tra người thật ---------- */
 function dungCamera(){ phien++; if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; } }
 function nhac(t){ $('nhac').textContent = t; }
@@ -232,7 +297,7 @@ function datTienDo(n){ $('tienDo').style.width = Math.min(100, Math.round(n * 10
 async function batDauKhuonMat(){
   if (demNguoc){ clearInterval(demNguoc); demNguoc = null; }
   dungCamera(); hien('scrMat'); $('btnThuLaiMat').hidden = true; datTienDo(0); nhac('Đang tải bộ nhận diện…');
-  batDinhVi();
+  if (cheDo === 'diemDanh') batDinhVi();
   try { await taiMoHinh(); }
   catch (e) { return ketQuaLoi(['Không tải được bộ nhận diện khuôn mặt. Kiểm tra kết nối mạng rồi thử lại.'], true); }
   nhac('Đang mở camera…');
@@ -287,11 +352,21 @@ async function chupVaGui(id){
   const anh = chupAnh(v);
   dungCamera();
 
+  const n = docNho();
+  if (cheDo === 'truoc'){   // đăng ký trước: không cần vị trí, không điểm danh
+    mau = { desc: tb.map(x => Math.round(x * 1e5) / 1e5), anh, vt: viTri && Date.now() - viTri.t < 60000 ? viTri : null };
+    cho('Đang nhận diện…');
+    let r;
+    try { r = await goi('hoSoCuaToi', { desc: mau.desc, goiY: n ? n.maDB : '', ma: maDK }); }
+    catch (e) { return ketQuaLoi(['Lỗi kết nối máy chủ: ' + e.message], true); }
+    if (r.ok) return moHoSo(r);
+    if (r.chuaNhanRa) return moDangKy();
+    return ketQuaLoi(r.lyDo, true);
+  }
   cho('Đang xác định vị trí của bạn…');
   const vt = await choViTri(15000);
   mau = { desc: tb.map(x => Math.round(x * 1e5) / 1e5), anh, vt };
   cho('Đang nhận diện…');
-  const n = docNho();
   let r;
   try { r = await goi('diemDanh', Object.assign(goiViTri(), { desc: mau.desc, goiY: n ? n.maDB : '', anh })); }
   catch (e) { return ketQuaLoi(['Lỗi kết nối máy chủ: ' + e.message], true); }
@@ -311,9 +386,12 @@ function chupAnh(v){
 async function moDangKy(){
   cho('Đang tải danh sách đại biểu…');
   let r;
-  try { r = await goi('dsChuaDangKy'); } catch (e) { return ketQuaLoi(['Lỗi kết nối máy chủ: ' + e.message], true); }
+  const truoc = cheDo === 'truoc';
+  try { r = await goi('dsChuaDangKy', { truoc, ma: maDK }); } catch (e) { return ketQuaLoi(['Lỗi kết nối máy chủ: ' + e.message], true); }
   if (!r.ds.length) return ketQuaLoi(['Chưa nhận ra khuôn mặt của bạn.', r.loi || 'Không còn tên nào chờ đăng ký trong danh sách. Vui lòng liên hệ Ban Tổ chức.'], true);
   dsDK = r.ds; chonMa = '';
+  $('dkThem').hidden = true; $('dkChucVu').value = ''; $('dkSdt').value = '';
+  $('btnDK').textContent = truoc ? 'Đăng ký' : 'Đăng ký & điểm danh';
   const dv = [...new Set(dsDK.map(x => x.donVi))];
   $('dkDonVi').innerHTML = '<option value="">— Tất cả đơn vị (' + dsDK.length + ' người) —</option>' + dv.map(d => '<option>' + esc(d) + '</option>').join('');
   $('dkTim').value = ''; $('dkCamKet').checked = false; $('dkAnh').src = mau.anh;
@@ -328,15 +406,37 @@ function veDsTen(){
     (x.chucVu ? ' — ' : '') + esc(x.donVi) + '</small></span></label>').join('')
     : '<div class="goi-y" style="padding:12px">Không tìm thấy. Nếu tên bạn không có trong danh sách, vui lòng liên hệ Ban Tổ chức.</div>';
 }
-function chonTen(ma){ chonMa = ma; veDsTen(); capNhatNutDK(); }
+function chonTen(ma){
+  chonMa = ma; veDsTen(); capNhatNutDK();
+  const x = dsDK.find(d => d.maDB === ma);
+  $('dkThem').hidden = false; $('dkChucVu').value = x ? x.chucVu || '' : '';
+}
 function capNhatNutDK(){ $('btnDK').disabled = !(chonMa && $('dkCamKet').checked); }
 async function guiDangKy(){
   const x = dsDK.find(d => d.maDB === chonMa);
   if (!x || !confirm('Đăng ký khuôn mặt cho:\n\n' + x.hoTen + '\n' + x.donVi + '\n\nSau khi đăng ký, tên này sẽ gắn với khuôn mặt của bạn.')) return;
   cho('Đang đăng ký…');
   let r;
-  try { r = await goi('dangKy', Object.assign(goiViTri(), { maDB: chonMa, desc: mau.desc, anh: mau.anh })); }
+  try { r = await goi('dangKy', Object.assign(goiViTri(), { maDB: chonMa, desc: mau.desc, anh: mau.anh,
+    truoc: cheDo === 'truoc', ma: maDK, chucVu: $('dkChucVu').value, sdt: $('dkSdt').value })); }
   catch (e) { return ketQuaLoi(['Lỗi kết nối máy chủ: ' + e.message], true); }
+  hienKetQua(r);
+}
+
+/* ---------- Hồ sơ đã đăng ký ---------- */
+function moHoSo(r){
+  hoSo = r;
+  $('hsAnh').src = mau.anh; $('hsTen').textContent = r.hoTen; $('hsDonVi').textContent = r.donVi || '';
+  $('hsChucVu').value = r.chucVu || ''; $('hsSdt').value = r.sdt || '';
+  ghiNho(r);
+  hien('scrHoSo');
+}
+async function luuHoSo(){
+  cho('Đang lưu…');
+  let r;
+  try { r = await goi('capNhatHoSo', { desc: mau.desc, maDB: hoSo.maDB, chucVu: $('hsChucVu').value, sdt: $('hsSdt').value, ma: maDK }); }
+  catch (e) { return ketQuaLoi(['Lỗi kết nối máy chủ: ' + e.message]); }
+  if (!r.ok){ alert(r.lyDo.join('\n')); return hien('scrHoSo'); }
   hienKetQua(r);
 }
 
@@ -351,14 +451,16 @@ function hienKetQua(r){
   if (r.dangKyMoi) ghiNho(r);
   if (r.ok){
     ghiNho(r);
-    const tieuDe = r.chiDangKy ? 'Đăng ký khuôn mặt thành công' : r.daCo ? 'Bạn đã điểm danh trước đó' :
+    const tieuDe = r.capNhat ? 'Đã cập nhật thông tin' : r.truoc ? 'Đăng ký trước thành công' :
+                   r.chiDangKy ? 'Đăng ký khuôn mặt thành công' : r.daCo ? 'Bạn đã điểm danh trước đó' :
                    r.dangKyMoi ? 'Đăng ký & điểm danh thành công' : 'Điểm danh thành công';
     $('kq').className = 'the kq thanh-cong';
     $('kq').innerHTML = '<div class="icon">✔</div><h2>' + tieuDe + '</h2>' +
       '<div class="ten">' + esc(r.hoTen) + '</div>' + (r.chucVu ? '<div class="cv">' + esc(r.chucVu) + '</div>' : '') +
       '<div class="meta">' + (r.tenSK ? esc(r.tenSK) + '<br>' : '') + 'Thời gian: ' + esc(r.thoiGian) +
       (r.khoangCach != null && !r.daCo ? '<br>Cách điểm hội nghị: ' + r.khoangCach + ' m' : '') +
-      (r.chiDangKy ? '<br>Hiện chưa có hội nghị đang mở; lần sau bạn chỉ cần quét khuôn mặt.' : '') + '</div>';
+      (r.truoc || r.capNhat ? '<br><b>Bước này chưa phải điểm danh.</b> Khi đến hội trường, mở trang và bấm <b>Điểm danh bằng khuôn mặt</b> — hệ thống sẽ tự nhận ra bạn.'
+        : r.chiDangKy ? '<br>Hiện chưa có hội nghị đang mở; lần sau bạn chỉ cần quét khuôn mặt.' : '') + '</div>';
     nutKetQua(false);
     hien('scrKQ');
     if (KIOSK){ // máy tại bàn đón tiếp: tự quay về cho người tiếp theo
@@ -372,7 +474,7 @@ function hienKetQua(r){
 function ketQuaLoi(ds, choThuLai, hoTen){
   dungCamera();
   $('kq').className = 'the kq that-bai';
-  $('kq').innerHTML = '<div class="icon">✖</div><h2>Chưa điểm danh được</h2>' +
+  $('kq').innerHTML = '<div class="icon">✖</div><h2>' + (cheDo === 'truoc' ? 'Chưa hoàn tất' : 'Chưa điểm danh được') + '</h2>' +
     (hoTen ? '<div class="ten">' + esc(hoTen) + '</div>' : '') +
     '<ul>' + ds.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>';
   nutKetQua(!!choThuLai);
@@ -384,8 +486,8 @@ window.addEventListener('load', () => {
   const app = (navigator.userAgent.match(/Zalo|FBAN|FBAV|Instagram|Line\//i) || [])[0];
   if (app){ $('tenApp').textContent = /zalo/i.test(app) ? 'Zalo' : /line/i.test(app) ? 'LINE' : 'Facebook/Instagram'; $('canhBaoApp').hidden = false; }
   taiMoHinh().catch(() => {});
-  batDinhVi();
-  veChao();
+  if (MO_DANG_KY_TRUOC) chip('chipGPS', 'Vị trí: không cần khi đăng ký trước'); else batDinhVi();
+  veChao(MO_DANG_KY_TRUOC);
 });
 </script>
 </body>
