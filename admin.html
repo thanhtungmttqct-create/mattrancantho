@@ -27,6 +27,7 @@
   .btn.phu{background:#fff;color:var(--do);border:1px solid var(--do)}
   .btn.xam{background:#f3f4f6;color:var(--chu)}
   .btn.nho{padding:4px 9px;font-size:12px;font-weight:500}
+  .btn.nho:not(.phu):not(.xam){color:#fff}
   .btn:disabled{opacity:.5;cursor:default}
   .hang{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
   table{width:100%;border-collapse:collapse}
@@ -121,7 +122,7 @@
       <h2>Đường dẫn sử dụng</h2>
       <div class="nho">Trang điểm danh cho đại biểu (đường dẫn nằm trong mã QR chung — bấm <b>In mã QR</b> ở từng hội nghị để in áp phích dán tại cửa hội trường):</div>
       <div class="hang"><input readonly id="urlQuet"><button class="btn nho" onclick="saoChep('urlQuet')">Sao chép</button></div>
-      <div class="nho" style="margin-top:8px">Máy tính bảng đặt tại bàn đón tiếp (không ghi nhớ người dùng, tự chuyển người tiếp theo):</div>
+      <div class="nho" style="margin-top:8px">Máy tính bảng đặt tại bàn đón tiếp (cán bộ tìm tên và điểm danh giúp đại biểu không có điện thoại thông minh; ở chế độ điện thoại cần nhập <b>Mã kiosk</b> đặt trong tab Cài đặt):</div>
       <div class="hang"><input readonly id="urlKiosk"><button class="btn nho" onclick="saoChep('urlKiosk')">Sao chép</button></div>
       <div class="nho" style="margin-top:8px">Đăng ký trước tại nhà (gửi qua Zalo/tin nhắn hoặc in mã QR lên giấy mời) — đại biểu tự đăng ký khuôn mặt, cập nhật chức vụ/SĐT, <b>chưa điểm danh</b>:</div>
       <div class="hang"><input readonly id="urlTruoc"><button class="btn nho" onclick="saoChep('urlTruoc')">Sao chép</button>
@@ -134,7 +135,7 @@
   <section id="tDB" class="tab" hidden>
     <div class="the">
       <h2>Thêm đại biểu (dán từ Excel)</h2>
-      <div class="nho">Mỗi dòng một người, các cột theo thứ tự: <b>Họ tên | Chức vụ | Đơn vị | Nhóm | Số điện thoại</b> (2 cột cuối không bắt buộc). Mã đại biểu được tạo tự động. Đại biểu sẽ tự chọn tên mình và đăng ký khuôn mặt ở lần quét đầu tiên; Ban Tổ chức cũng có thể đăng ký trước bằng ảnh.</div>
+      <div class="nho">Mỗi dòng một người, các cột theo thứ tự: <b>Họ tên | Chức vụ | Đơn vị | Nhóm | Số điện thoại</b> (2 cột cuối không bắt buộc). Mã đại biểu được tạo tự động. Đại biểu sẽ tự chọn tên mình khi đăng ký (gắn điện thoại hoặc khuôn mặt, tùy phương thức trong Cài đặt).</div>
       <textarea id="dbDan" placeholder="Nguyễn Văn A	Phó Chủ tịch	Ủy ban MTTQ phường Ninh Kiều	TapHuan2026"></textarea>
       <div class="hang"><button class="btn" onclick="themDB()">Thêm vào danh sách</button></div>
     </div>
@@ -143,11 +144,11 @@
         <input id="dbTim" placeholder="Tìm họ tên, đơn vị, mã…" style="max-width:260px" oninput="veDB()">
         <select id="dbLocNhom" style="max-width:180px" onchange="veDB()"></select>
         <select id="dbLocMat" style="max-width:180px" onchange="veDB()">
-          <option value="">Tất cả</option><option value="cho">Tự đăng ký – chờ xác nhận</option><option value="co">Đã đăng ký mặt</option><option value="chua">Chưa đăng ký mặt</option>
+          <option value="">Tất cả</option><option value="cho">Tự đăng ký – chờ xác nhận</option><option value="chuyen">Yêu cầu chuyển điện thoại</option><option value="co">Đã đăng ký</option><option value="chua">Chưa đăng ký</option>
         </select>
         <span class="nho" id="dbDem"></span>
       </div>
-      <div class="hang">
+      <div class="hang" id="hangMatLoat">
         <label class="btn phu" style="margin:0;color:var(--do)">📁 Đăng ký mặt hàng loạt
           <input type="file" accept="image/*" multiple class="an" onchange="dangKyHangLoat(this.files);this.value=''"></label>
         <span class="nho">Đặt tên ảnh theo mã đại biểu, VD <b>DB0001.jpg</b></span>
@@ -155,7 +156,7 @@
       <div id="nhatKyBox" class="an" style="margin-top:10px"><div id="nhatKy"></div></div>
     </div>
     <div class="the cuon">
-      <table><thead><tr><th>Mã</th><th>Họ tên / Chức vụ / Đơn vị</th><th>Nhóm</th><th>Khuôn mặt</th><th style="width:250px">Thao tác</th></tr></thead>
+      <table><thead><tr><th>Mã</th><th>Họ tên / Chức vụ / Đơn vị</th><th>Nhóm</th><th id="thDK">Đăng ký</th><th style="width:250px">Thao tác</th></tr></thead>
       <tbody id="dsDB"></tbody></table>
     </div>
   </section>
@@ -173,14 +174,21 @@
     </div>
     <div class="so" id="kqSo"></div>
     <div class="the cuon"><h2>Đã điểm danh</h2><table><thead><tr><th>#</th><th>Giờ</th><th>Họ tên</th><th>Đơn vị</th><th>Cách (m)</th><th>Độ lệch mặt</th><th>Đối chiếu</th></tr></thead><tbody id="kqOK"></tbody></table></div>
-    <div class="the cuon"><h2>Chưa điểm danh</h2><table><thead><tr><th>#</th><th>Mã</th><th>Họ tên</th><th>Chức vụ</th><th>Đơn vị</th><th>Khuôn mặt</th></tr></thead><tbody id="kqChua"></tbody></table></div>
+    <div class="the cuon"><h2>Chưa điểm danh</h2><table><thead><tr><th>#</th><th>Mã</th><th>Họ tên</th><th>Chức vụ</th><th>Đơn vị</th><th>Đã đăng ký</th></tr></thead><tbody id="kqChua"></tbody></table></div>
     <div class="the cuon"><h2>Lượt bị từ chối (đối chiếu chống điểm danh hộ)</h2><table><thead><tr><th>Giờ</th><th>Họ tên</th><th>Lý do</th><th>Cách (m)</th><th>Độ lệch mặt</th><th>Đối chiếu</th></tr></thead><tbody id="kqTC"></tbody></table></div>
   </section>
 
   <!-- CÀI ĐẶT -->
   <section id="tCD" class="tab" hidden>
     <div class="the">
-      <h2>Ngưỡng xác thực</h2>
+      <h2>Phương thức xác thực</h2>
+      <div class="luoi">
+        <div style="grid-column:1/-1"><label>Cách chống điểm danh hộ</label><select id="cdPhuongThuc">
+          <option value="0">Điện thoại đã gắn + GPS (không dùng khuôn mặt) — mỗi điện thoại chỉ đăng ký cho 1 đại biểu</option>
+          <option value="1">Khuôn mặt + GPS</option></select></div>
+        <div><label>Mã kiosk (máy tính bảng tại bàn đón tiếp, chế độ điện thoại; để trống = tắt)</label><input id="cdMaKiosk" maxlength="50" placeholder="VD: BAN-DON-TIEP"></div>
+      </div>
+      <h2 style="margin-top:16px">Ngưỡng xác thực</h2>
       <div class="luoi">
         <div><label>Độ lệch khuôn mặt tối đa (0.40 rất chặt – 0.50 dễ; khuyến nghị 0.45)</label><input type="number" step="0.01" min="0.3" max="0.7" id="cdMat"></div>
         <div><label>Sai số GPS tối đa (m)</label><input type="number" id="cdGPS"></div>
@@ -275,6 +283,8 @@ function nhanDuLieu(d){
   const c = d.cauHinh; $('cdMat').value = c.NGUONG_KHUON_MAT; $('cdGPS').value = c.GPS_TOI_DA_M; $('cdSom').value = c.PHUT_SOM; $('cdTre').value = c.PHUT_TRE;
   $('cdDKHT').value = String(c.DANG_KY_TAI_HOI_TRUONG); $('cdTuHoc').value = String(c.TU_HOC_MAU);
   $('cdTruoc').value = String(c.DANG_KY_TRUOC); $('cdMaDK').value = c.MA_DANG_KY_TRUOC || '';
+  $('cdPhuongThuc').value = String(c.DUNG_KHUON_MAT ? 1 : 0); $('cdMaKiosk').value = c.MA_KIOSK || '';
+  $('hangMatLoat').classList.toggle('an', !c.DUNG_KHUON_MAT); $('thDK').textContent = c.DUNG_KHUON_MAT ? 'Khuôn mặt' : 'Điện thoại';
   $('ttTruoc').innerHTML = c.DANG_KY_TRUOC ? 'Đang <b>mở</b> đăng ký trước' + (c.MA_DANG_KY_TRUOC ? ' · mã đăng ký: <b>' + esc(c.MA_DANG_KY_TRUOC) + '</b>' : ' · không cần mã') + ' (đổi ở tab Cài đặt).'
     : 'Đăng ký trước đang <b>tắt</b> (bật ở tab Cài đặt).';
   veSK(); veLocNhom(); veDB(); veChonSK();
@@ -354,21 +364,41 @@ function dbLoc(){
   const q = $('dbTim').value.trim().toLowerCase(), n = $('dbLocNhom').value, m = $('dbLocMat').value;
   return D.daiBieu.filter(d => (!q || [d.maDB, d.hoTen, d.donVi, d.chucVu].join(' ').toLowerCase().includes(q)) &&
     (!n || String(d.nhom || '').split(/[,;]/).map(x => x.trim()).includes(n)) &&
-    (!m || (m === 'cho' ? (d.soMau > 0 && laTuDK(d) && !d.xacNhan) : m === 'co' ? d.soMau > 0 : !d.soMau)));
+    (!m || (m === 'cho' ? (daDK(d) && laTuDK(d) && !d.xacNhan) : m === 'chuyen' ? !!d.yeuCau : m === 'co' ? daDK(d) : !daDK(d))));
 }
 function veDB(){
   const ds = dbLoc();
-  const cho = D.daiBieu.filter(d => d.soMau && laTuDK(d) && !d.xacNhan).length;
-  $('dbDem').innerHTML = ds.length + '/' + D.daiBieu.length + ' đại biểu · ' + D.daiBieu.filter(d => d.soMau).length + ' đã đăng ký mặt' +
-    (cho ? ' · <b style="color:#b45309">' + cho + ' tự đăng ký chờ xác nhận</b>' : '');
+  const cho = D.daiBieu.filter(d => daDK(d) && laTuDK(d) && !d.xacNhan).length, chuyen = D.daiBieu.filter(d => d.yeuCau).length;
+  $('dbDem').innerHTML = ds.length + '/' + D.daiBieu.length + ' đại biểu · ' + D.daiBieu.filter(daDK).length + (MAT() ? ' đã đăng ký mặt' : ' đã gắn điện thoại') +
+    (cho ? ' · <b style="color:#b45309">' + cho + ' tự đăng ký chờ xác nhận</b>' : '') + (chuyen && !MAT() ? ' · <b style="color:#b91c1c">' + chuyen + ' yêu cầu chuyển điện thoại</b>' : '');
   $('dsDB').innerHTML = ds.map(d => '<tr><td>' + esc(d.maDB) + '</td><td><b>' + esc(d.hoTen) + '</b><div class="nho">' + esc(d.chucVu) + (d.donVi ? ' — ' + esc(d.donVi) : '') + (d.sdt ? ' · ☎ ' + esc(d.sdt) : '') + '</div></td>' +
-    '<td>' + esc(d.nhom) + '</td><td>' + veTrangThaiMat(d) + '</td>' +
-    '<td>' + (d.soMau && laTuDK(d) && !d.xacNhan ? '<button class="btn nho" onclick="xemAnhDB(\'' + d.maDB + '\')">Kiểm tra &amp; xác nhận</button> ' : '') +
-    '<button class="btn nho phu" onclick="moDangKy(\'' + d.maDB + '\')">Đăng ký mặt</button> ' +
+    '<td>' + esc(d.nhom) + '</td><td>' + (MAT() ? veTrangThaiMat(d) : veTrangThaiMay(d)) + '</td>' +
+    '<td>' + (!MAT() && d.yeuCau ? '<button class="btn nho" onclick="duyetChuyen(\'' + d.maDB + '\', true)">Duyệt chuyển máy</button> <button class="btn nho xam" onclick="duyetChuyen(\'' + d.maDB + '\', false)">Từ chối</button> ' : '') +
+    (daDK(d) && laTuDK(d) && !d.xacNhan ? (MAT() ? '<button class="btn nho" onclick="xemAnhDB(\'' + d.maDB + '\')">Kiểm tra &amp; xác nhận</button> '
+                                            : '<button class="btn nho" onclick="xacNhanDK(\'' + d.maDB + '\')">Xác nhận</button> ') : '') +
+    (MAT() ? '<button class="btn nho phu" onclick="moDangKy(\'' + d.maDB + '\')">Đăng ký mặt</button> ' : '') +
     '<button class="btn nho xam" onclick="menuDB(\'' + d.maDB + '\')">Khác…</button></td></tr>').join('');
 }
 const timDB = ma => D.daiBieu.find(d => d.maDB === ma);
 const laTuDK = d => String(d.nguon || '').indexOf('Tự đăng ký') === 0;
+const MAT = () => !!(D && D.cauHinh && D.cauHinh.DUNG_KHUON_MAT);
+const daDK = d => MAT() ? d.soMau > 0 : !!d.ganMay;
+function veTrangThaiMay(d){
+  const yc = d.yeuCau ? '<div class="nho" style="color:#b91c1c">⚠ Yêu cầu chuyển sang máy mới (' + esc(d.yeuCau.may) + ', ' + esc(d.yeuCau.luc) + ')</div>' : '';
+  if (!d.ganMay) return '<span class="badge b-do">Chưa</span>' + yc;
+  const tu = laTuDK(d), ten = d.nguon === 'Tự đăng ký trước' ? 'ĐK trước' : 'Tự ĐK';
+  return '<span class="badge ' + (tu && !d.xacNhan ? 'b-vang' : 'b-xanh') + '">📱 ' + (tu ? ten + (d.xacNhan ? ' · đã xác nhận' : ' · chờ xác nhận') : 'Đã gắn') + '</span>' +
+    '<div class="nho">' + esc(d.mayGan) + ' · ' + esc(d.ngayGan) + '</div>' + yc;
+}
+async function duyetChuyen(ma, dongY){
+  const d = timDB(ma);
+  if (!confirm((dongY ? 'DUYỆT chuyển ' : 'TỪ CHỐI chuyển ') + d.hoTen + ' sang điện thoại mới (' + (d.yeuCau && d.yeuCau.may) + ')?' + (dongY ? '\nĐiện thoại cũ sẽ không dùng được nữa.' : ''))) return;
+  try { nhanDuLieu(await goi('adminDuyetChuyenMay', ma, !!dongY)); bao(dongY ? 'Đã chuyển sang điện thoại mới' : 'Đã từ chối'); } catch (e) { loi(e); }
+}
+async function goGanMay(ma, huy){
+  if (!confirm(huy ? 'Gỡ điện thoại của ' + ma + ' và đánh dấu HỦY mọi lượt điểm danh thành công của người này?' : 'Gỡ điện thoại đã gắn của ' + ma + '? Đại biểu sẽ phải chọn tên lại trên điện thoại mới.')) return;
+  try { nhanDuLieu(await goi('adminGoGanMay', ma, !!huy)); dongModal(); bao('Đã gỡ'); } catch (e) { loi(e); }
+}
 function veTrangThaiMat(d){
   if (!d.soMau) return '<span class="badge b-do">Chưa</span>';
   const tu = laTuDK(d), ten = d.nguon === 'Tự đăng ký trước' ? 'ĐK trước' : 'Tự ĐK';
@@ -386,8 +416,10 @@ function menuDB(ma){
     '<label>Đơn vị</label><input id="eDV" value="' + esc(d.donVi) + '"><label>Nhóm (nhiều nhóm cách nhau dấu phẩy)</label><input id="eNhom" value="' + esc(d.nhom) + '">' +
     '<label>Số điện thoại</label><input id="eSdt" value="' + esc(d.sdt) + '">' +
     '<div class="hang"><button class="btn" onclick="suaDB(\'' + ma + '\')">Lưu thông tin</button><button class="btn xam" onclick="dongModal()">Đóng</button></div><hr>' +
-    '<div class="hang"><button class="btn nho phu" onclick="xoaMat(\'' + ma + '\', false)">Xóa khuôn mặt (cho đăng ký lại)</button>' +
-    '<button class="btn nho phu" onclick="xoaMat(\'' + ma + '\', true)">Hủy đăng ký sai người (hủy cả các lượt điểm danh)</button>' +
+    (MAT() ? '<div class="hang"><button class="btn nho phu" onclick="xoaMat(\'' + ma + '\', false)">Xóa khuôn mặt (cho đăng ký lại)</button>' +
+      '<button class="btn nho phu" onclick="xoaMat(\'' + ma + '\', true)">Hủy đăng ký sai người (hủy cả các lượt điểm danh)</button>'
+    : '<div class="hang"><button class="btn nho phu" onclick="goGanMay(\'' + ma + '\', false)">Gỡ điện thoại (cho đăng ký lại)</button>' +
+      '<button class="btn nho phu" onclick="goGanMay(\'' + ma + '\', true)">Hủy đăng ký sai người (hủy cả các lượt điểm danh)</button>') +
     '<button class="btn nho xam" onclick="xoaDB(\'' + ma + '\')">Xóa đại biểu</button></div>');
 }
 async function suaDB(ma){ try { nhanDuLieu(await goi('adminSuaDaiBieu', { maDB: ma, hoTen: $('eTen').value, chucVu: $('eCV').value, donVi: $('eDV').value, nhom: $('eNhom').value, sdt: $('eSdt').value })); dongModal(); bao('Đã lưu'); } catch (e) { loi(e); } }
@@ -551,15 +583,15 @@ async function taiKQ(){
   $('kqSo').innerHTML = '<div><b>' + r.soMoi + '</b>Đại biểu được mời</div><div><b style="color:#15803d">' + r.thanhCong.length + '</b>Đã điểm danh (' + tl + '%)</div>' +
     '<div><b>' + r.chua.length + '</b>Chưa điểm danh</div><div><b style="color:#b91c1c">' + r.tuChoi.length + '</b>Lượt bị từ chối</div>';
   KQ = { ok: r.thanhCong, tc: r.tuChoi };
-  $('kqOK').innerHTML = r.thanhCong.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.gio) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + (x.tuDK && !x.xacNhan ? ' · <span style="color:#b45309">tự ĐK chờ xác nhận</span>' : '') + '</div></td><td>' + esc(x.donVi) + '</td><td>' + esc(x.kc) + '</td><td>' + esc(x.lech) + '</td><td><button class="btn nho xam" onclick="xemAnhKQ(\'ok\',' + i + ')">Xem ảnh</button></td></tr>').join('') || '<tr><td colspan="7" class="nho">Chưa có ai.</td></tr>';
-  $('kqChua').innerHTML = r.chua.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.maDB) + '</td><td>' + esc(x.hoTen) + '</td><td>' + esc(x.chucVu) + '</td><td>' + esc(x.donVi) + '</td><td>' + (x.coMat ? 'Đã có' : '<span class="nho">Chưa (sẽ tự đăng ký)</span>') + '</td></tr>').join('') || '<tr><td colspan="6" class="nho">Tất cả đã điểm danh.</td></tr>';
-   $('kqTC').innerHTML = r.tuChoi.map((x, i) => '<tr><td>' + esc(x.gio) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + '</div></td><td>' + esc(x.lyDo) + '</td><td>' + esc(x.kc) + '</td><td>' + esc(x.lech) + '</td><td><button class="btn nho xam" onclick="xemAnhKQ(\'tc\',' + i + ')">Xem ảnh</button></td></tr>').join('') || '<tr><td colspan="6" class="nho">Không có.</td></tr>';
+  $('kqOK').innerHTML = r.thanhCong.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.gio) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + (x.tuDK && !x.xacNhan ? ' · <span style="color:#b45309">tự ĐK chờ xác nhận</span>' : '') + '</div></td><td>' + esc(x.donVi) + '</td><td>' + esc(x.kc) + '</td><td>' + esc(x.lech) + '</td><td>' + (MAT() ? '<button class="btn nho xam" onclick="xemAnhKQ(\'ok\',' + i + ')">Xem ảnh</button>' : '—') + '</td></tr>').join('') || '<tr><td colspan="7" class="nho">Chưa có ai.</td></tr>';
+  $('kqChua').innerHTML = r.chua.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.maDB) + '</td><td>' + esc(x.hoTen) + '</td><td>' + esc(x.chucVu) + '</td><td>' + esc(x.donVi) + '</td><td>' + (x.coMat ? 'Đã đăng ký' : '<span class="nho">Chưa (sẽ tự đăng ký)</span>') + '</td></tr>').join('') || '<tr><td colspan="6" class="nho">Tất cả đã điểm danh.</td></tr>';
+   $('kqTC').innerHTML = r.tuChoi.map((x, i) => '<tr><td>' + esc(x.gio) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + '</div></td><td>' + esc(x.lyDo) + '</td><td>' + esc(x.kc) + '</td><td>' + esc(x.lech) + '</td><td>' + (MAT() ? '<button class="btn nho xam" onclick="xemAnhKQ(\'tc\',' + i + ')">Xem ảnh</button>' : '—') + '</td></tr>').join('') || '<tr><td colspan="6" class="nho">Không có.</td></tr>';
 }
 function tuLamMoi(){ clearInterval(hengio); if ($('kqTu').checked) hengio = setInterval(() => { if (!$('tKQ').hidden) taiKQ(); }, 15000); }
 
 /* ---------- Cài đặt ---------- */
 async function luuCD(){
-  try { D.cauHinh = await goi('adminLuuCauHinh', { NGUONG_KHUON_MAT: $('cdMat').value, GPS_TOI_DA_M: $('cdGPS').value, PHUT_SOM: $('cdSom').value, PHUT_TRE: $('cdTre').value, DANG_KY_TAI_HOI_TRUONG: $('cdDKHT').value, TU_HOC_MAU: $('cdTuHoc').value, DANG_KY_TRUOC: $('cdTruoc').value, MA_DANG_KY_TRUOC: $('cdMaDK').value }); bao('Đã lưu cài đặt'); }
+  try { D.cauHinh = await goi('adminLuuCauHinh', { NGUONG_KHUON_MAT: $('cdMat').value, GPS_TOI_DA_M: $('cdGPS').value, PHUT_SOM: $('cdSom').value, PHUT_TRE: $('cdTre').value, DANG_KY_TAI_HOI_TRUONG: $('cdDKHT').value, TU_HOC_MAU: $('cdTuHoc').value, DANG_KY_TRUOC: $('cdTruoc').value, MA_DANG_KY_TRUOC: $('cdMaDK').value, DUNG_KHUON_MAT: $('cdPhuongThuc').value, MA_KIOSK: $('cdMaKiosk').value }); bao('Đã lưu cài đặt'); }
   catch (e) { loi(e); }
 }
 async function doiMK(){
