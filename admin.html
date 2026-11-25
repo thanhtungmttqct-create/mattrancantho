@@ -124,7 +124,7 @@
       <div class="hang"><input readonly id="urlQuet"><button class="btn nho" onclick="saoChep('urlQuet')">Sao chép</button></div>
       <div class="nho" style="margin-top:8px">Máy tính bảng đặt tại bàn đón tiếp (cán bộ tìm tên và điểm danh giúp đại biểu không có điện thoại thông minh; ở chế độ điện thoại cần nhập <b>Mã kiosk</b> đặt trong tab Cài đặt):</div>
       <div class="hang"><input readonly id="urlKiosk"><button class="btn nho" onclick="saoChep('urlKiosk')">Sao chép</button></div>
-      <div class="nho" style="margin-top:8px">Đăng ký trước tại nhà (gửi qua Zalo/tin nhắn hoặc in mã QR lên giấy mời) — đại biểu tự đăng ký khuôn mặt, cập nhật chức vụ/SĐT, <b>chưa điểm danh</b>:</div>
+      <div class="nho" style="margin-top:8px">Đăng ký trước tại nhà (gửi qua Zalo/tin nhắn hoặc in mã QR lên giấy mời) — đại biểu tự chọn tên (gắn điện thoại hoặc khuôn mặt, tùy phương thức), cập nhật chức vụ/SĐT, <b>chưa điểm danh</b>:</div>
       <div class="hang"><input readonly id="urlTruoc"><button class="btn nho" onclick="saoChep('urlTruoc')">Sao chép</button>
         <button class="btn nho phu" onclick="inQRDangKyTruoc()">🖨 In mã QR đăng ký trước</button></div>
       <div class="nho" id="ttTruoc"></div>
@@ -215,7 +215,6 @@
 <div id="vungIn"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js"></script>
 <script>
 /* ======= DÁN ĐƯỜNG DẪN WEB APP APPS SCRIPT (kết thúc bằng /exec) VÀO ĐÂY ======= */
 const API_URL = 'https://script.google.com/macros/s/AKfycbweVW70kfGNx-RMSTIbqViS0CLwLarf-SiCWVTFj6se5O5u4nl9n9sPAJhhX8Gm1wlZNA/exec';
@@ -437,9 +436,14 @@ function inPoster(ma){
   $('vungIn').innerHTML = '<div class="pt-dau"><small>ỦY BAN MTTQ VIỆT NAM THÀNH PHỐ CẦN THƠ</small><b>ĐIỂM DANH ĐẠI BIỂU</b></div>' +
     '<div class="pt-ten">' + esc(s.ten) + '</div><div class="pt-tt">' + esc(s.diaDiem || '') + ' · ' + esc(s.batDauHT) + '</div>' +
     '<img class="pt-qr" src="' + anhQR(WEB_URL) + '">' +
-    '<div class="pt-bc"><b>1.</b> Mở camera điện thoại, quét mã QR trên<br><b>2.</b> Cho phép <b>Camera</b> và <b>Vị trí</b><br>' +
-    '<b>3.</b> Nhìn thẳng vào camera, giữ yên khoảng 1 giây<br><b>4.</b> Lần đầu: chọn <b>Đơn vị</b> và <b>Họ tên</b> của mình để đăng ký</div>' +
-    '<div class="pt-chan">Mỗi người tự điểm danh bằng khuôn mặt của mình. Mọi lượt điểm danh đều được lưu ảnh và vị trí để đối chiếu.</div>';
+    (MAT()
+      ? '<div class="pt-bc"><b>1.</b> Mở camera điện thoại, quét mã QR trên<br><b>2.</b> Cho phép <b>Camera</b> và <b>Vị trí</b><br>' +
+        '<b>3.</b> Nhìn thẳng vào camera, giữ yên khoảng 1 giây<br><b>4.</b> Lần đầu: chọn <b>Đơn vị</b> và <b>Họ tên</b> của mình để đăng ký</div>' +
+        '<div class="pt-chan">Mỗi người tự điểm danh bằng khuôn mặt của mình. Mọi lượt điểm danh đều được lưu ảnh và vị trí để đối chiếu.</div>'
+      : '<div class="pt-bc"><b>1.</b> Mở camera điện thoại, quét mã QR trên<br><b>2.</b> Mở bằng <b>Chrome/Safari</b> (trong Zalo: bấm ⋯ › Mở bằng trình duyệt)<br>' +
+        '<b>3.</b> Bật <b>Định vị</b>, cho phép truy cập <b>Vị trí</b><br><b>4.</b> Bấm <b>✅ ĐIỂM DANH</b><br>' +
+        '<span style="font-size:11pt">Chưa đăng ký trước: bấm <b>ĐĂNG KÝ &amp; ĐIỂM DANH</b>, chọn Đơn vị và Họ tên của mình</span></div>' +
+        '<div class="pt-chan">Mỗi điện thoại chỉ đăng ký cho một đại biểu. Mọi lượt điểm danh đều được lưu vị trí, thời gian và thiết bị để đối chiếu.</div>');
   setTimeout(() => window.print(), 300);
 }
 function inQRDangKyTruoc(){
@@ -447,11 +451,13 @@ function inQRDangKyTruoc(){
   if (!c.DANG_KY_TRUOC) return bao('Hãy bật "Đăng ký trước tại nhà" ở tab Cài đặt trước khi in.');
   const mot = '<div style="border:1px dashed #999;border-radius:3mm;padding:5mm;break-inside:avoid;page-break-inside:avoid;text-align:center">' +
     '<div style="font-size:9pt;color:#9b0c23;font-weight:700">ỦY BAN MTTQ VIỆT NAM THÀNH PHỐ CẦN THƠ</div>' +
-    '<div style="font-size:13pt;font-weight:700;margin:1mm 0 2mm">ĐĂNG KÝ TRƯỚC KHUÔN MẶT</div>' +
+    '<div style="font-size:13pt;font-weight:700;margin:1mm 0 2mm">' + (MAT() ? 'ĐĂNG KÝ TRƯỚC KHUÔN MẶT' : 'ĐĂNG KÝ TRƯỚC ĐIỂM DANH') + '</div>' +
     '<img src="' + anhQR(TRUOC_URL) + '" style="width:45mm;height:45mm">' +
     (c.MA_DANG_KY_TRUOC ? '<div style="font-size:12pt;margin-top:1mm">Mã đăng ký: <b>' + esc(c.MA_DANG_KY_TRUOC) + '</b></div>' : '') +
-    '<div style="font-size:9pt;text-align:left;line-height:1.5;margin-top:2mm">1. Quét mã, cho phép camera<br>2. Nhìn thẳng vào camera<br>' +
-    '3. Chọn đơn vị, họ tên; cập nhật chức vụ, số điện thoại<br>4. Đến hội nghị: chỉ cần quét khuôn mặt để điểm danh</div></div>';
+    (MAT() ? '<div style="font-size:9pt;text-align:left;line-height:1.5;margin-top:2mm">1. Quét mã, cho phép camera<br>2. Nhìn thẳng vào camera<br>' +
+      '3. Chọn đơn vị, họ tên; cập nhật chức vụ, số điện thoại<br>4. Đến hội nghị: chỉ cần quét khuôn mặt để điểm danh</div></div>'
+    : '<div style="font-size:9pt;text-align:left;line-height:1.5;margin-top:2mm">1. Quét mã, mở bằng Chrome/Safari (không đăng ký trong Zalo)<br>' +
+      '2. Chọn đơn vị, họ tên; cập nhật chức vụ, số điện thoại<br>3. Đến hội nghị: dùng <b>đúng điện thoại này</b>, bật định vị, bấm <b>ĐIỂM DANH</b></div></div>');
   $('vungIn').innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8mm">' + mot.repeat(4) + '</div>';
   setTimeout(() => window.print(), 300);
 }
@@ -461,7 +467,9 @@ function saoChep(id){ const e = $(id); e.select(); try { document.execCommand('c
 function taiMoHinh(){
   if (modelsP) return modelsP;
   modelsP = (async () => {
-    if (typeof faceapi === 'undefined') throw new Error('Không tải được thư viện nhận diện (kiểm tra mạng)');
+    if (typeof faceapi === 'undefined') await new Promise((ok, loi) => { const sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js'; sc.onload = ok;
+      sc.onerror = () => loi(new Error('Không tải được thư viện nhận diện (kiểm tra mạng)')); document.head.appendChild(sc); });
     const coGL = await faceapi.tf.setBackend('webgl').catch(() => false); if (!coGL) await faceapi.tf.setBackend('cpu');
     await faceapi.tf.ready();
     // Trang quản trị dùng thêm bộ dò SSD (chính xác hơn với ảnh chân dung, ảnh thẻ)
