@@ -353,7 +353,7 @@ const KIOSK = new URLSearchParams(location.search).get('kiosk') === '1';
 const NHIN_THANG = 0.12;   // độ lệch hướng mặt tối đa coi là nhìn thẳng (0 = chính diện; ~0,18 ≈ mặt nghiêng 3/4)
 const SO_KHUNG_ON_DINH = 5; // số khung hình liên tiếp nhìn thẳng trước khi chụp (~1 giây)
 // ?dk=1 : mở thẳng màn "Đăng ký trước" (dùng cho mã QR in trên giấy mời)
-const MO_DANG_KY_TRUOC = new URLSearchParams(location.search).get('dk') === '1' && !KIOSK;
+let MO_DANG_KY_TRUOC = new URLSearchParams(location.search).get('dk') === '1' && !KIOSK;
 let cheDo = 'diemDanh';   // 'diemDanh' (tại hội trường) | 'truoc' (đăng ký/cập nhật tại nhà)
 let maDK = '', canMa = false, hoSo = null;
 let CHE_DO_MAT = true;    // lấy từ máy chủ: true = khuôn mặt + GPS; false = điện thoại đã gắn + GPS
@@ -1079,6 +1079,7 @@ window.addEventListener('load', async () => {
   try { TT = await goi('thongTinChung', MA_MAY); }
   catch (e) { $('khoiDau').hidden = true; return ketQuaLoi(['Không kết nối được máy chủ: ' + e.message]); }
   $('khoiDau').hidden = true;
+  if (MO_DANG_KY_TRUOC && !TT.dangKyTruoc) MO_DANG_KY_TRUOC = false;   // đã tắt đăng ký trước: mã QR cũ (?dk=1) mở như trang điểm danh thường
   CHE_DO_MAT = !!TT.dungKhuonMat;
   if (CHE_DO_MAT){
     TT = null;
