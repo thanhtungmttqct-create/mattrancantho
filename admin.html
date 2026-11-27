@@ -75,6 +75,7 @@
     <button data-tab="tSK" class="on">Hội nghị</button>
     <button data-tab="tDB">Đại biểu</button>
     <button data-tab="tKQ">Kết quả</button>
+    <button data-tab="tDH">Điểm danh hộ</button>
     <button data-tab="tCN">Chứng nhận</button>
     <button data-tab="tCD">Cài đặt</button>
   </nav>
@@ -180,6 +181,24 @@
       <div class="nho" style="margin:6px 0">Đại biểu <b>có mặt</b> nhưng không điểm danh được (máy lỗi, mất GPS, hết pin…): Ban Tổ chức kiểm tra trực tiếp rồi bấm <b>BTC xác nhận</b> và ghi lý do. Lượt xác nhận được tính như điểm danh thành công (kể cả để cấp giấy chứng nhận).</div>
       <table><thead><tr><th><input type="checkbox" style="width:auto" onchange="document.querySelectorAll('#kqChua input[type=checkbox]').forEach(x => x.checked = this.checked)"></th><th>#</th><th>Mã</th><th>Họ tên</th><th>Chức vụ</th><th>Đơn vị</th><th>Đã đăng ký</th><th>Thao tác</th></tr></thead><tbody id="kqChua"></tbody></table></div>
     <div class="the cuon"><h2>Lượt bị từ chối (đối chiếu chống điểm danh hộ)</h2><table><thead><tr><th>Giờ</th><th>Họ tên</th><th>Lý do</th><th>Cách (m)</th><th>Độ lệch mặt</th><th>Đối chiếu</th></tr></thead><tbody id="kqTC"></tbody></table></div>
+  </section>
+
+  <!-- ĐIỂM DANH HỘ (Ban Tổ chức điểm danh cho đại biểu) -->
+  <section id="tDH" class="tab" hidden>
+    <div class="the">
+      <h2>Điểm danh cho đại biểu</h2>
+      <div class="nho">Dùng khi đại biểu <b>có mặt</b> nhưng không tự điểm danh được (không bật được định vị, hết pin, không có điện thoại thông minh…).
+        Lượt điểm danh được ghi <b>"BTC xác nhận"</b>, tính như điểm danh thành công và được dùng để cấp giấy chứng nhận.</div>
+      <label>Buổi điểm danh (chọn buổi cần điểm danh cho đại biểu)</label>
+      <div id="dhBuoi" class="hang" style="margin-top:2px"></div>
+      <div class="luoi">
+        <div><label>Tìm đại biểu</label><input id="dhTim" placeholder="Gõ họ tên hoặc đơn vị (không cần dấu)…" oninput="veDH()"></div>
+        <div><label>Hiển thị</label><select id="dhLoc" onchange="veDH()"><option value="thieu">Chưa điểm danh đủ các buổi đã chọn</option><option value="">Tất cả đại biểu</option><option value="du">Đã điểm danh đủ</option></select></div>
+        <div style="grid-column:1/-1"><label>Lý do (ghi vào sổ điểm danh) *</label><input id="dhLyDo" maxlength="200" value="Có mặt tại hội trường – BTC điểm danh trực tiếp"></div>
+      </div>
+      <div class="hang"><button class="btn" onclick="taiDH()">↻ Làm mới</button><span class="nho" id="dhTT"></span></div>
+    </div>
+    <div class="the cuon"><table><thead><tr><th>#</th><th>Họ tên</th><th>Đơn vị</th><th>Tình trạng từng buổi</th><th style="width:190px">Thao tác</th></tr></thead><tbody id="dhDs"></tbody></table></div>
   </section>
 
   <!-- CHỨNG NHẬN -->
@@ -425,6 +444,7 @@ function moTab(id){
   document.querySelectorAll('.tab').forEach(t => t.hidden = t.id !== id);
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
   if (id === 'tKQ') taiKQ();
+  if (id === 'tDH'){ veChonDH(); taiDH(); }
   if (id === 'tCN'){ veChonCN(); if ($('cnMa').value) taiDsCN(); }
 }
 function nhanDuLieu(d){
@@ -791,12 +811,77 @@ function veDsCN(){
   $('cnSo').innerHTML = '<div><b style="color:#15803d">' + CN.du.length + '</b>Đủ điều kiện</div><div><b>' + CN.soDaCap + '</b>Đã cấp số</div>' +
     '<div><b style="color:#b91c1c">' + CN.chua.length + '</b>Chưa đủ điều kiện</div>';
   $('cnDu').innerHTML = dsCNLoc().map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + (x.gcn ? esc(x.gcn.so) : '<span class="nho">chưa cấp</span>') + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' +
-    esc(x.chucVu || '') + '</div>' + (x.btc && x.btc.length ? '<div class="nho"><span class="badge b-vang">BTC xác nhận: ' + x.btc.map(esc).join(', ') + '</span></div>' : '') + '</td><td>' + esc(x.donVi) + '</td><td>' + (x.gcn ? '<button class="btn nho xam" onclick="xemGCNAdmin(\'' + x.maDB + '\')">Xem / in</button> ' +
+    esc(x.chucVu || '') + '</div>' + (x.btc && x.btc.length ? '<div class="nho"><span class="badge b-vang">BTC xác nhận: ' + x.btc.map(esc).join(', ') + '</span></div>' : '') +
+    (x.bu && x.bu.length ? '<div class="nho"><span class="badge b-xam" title="Buổi này đại biểu có điểm danh nhưng bị lỗi (không lấy được vị trí hoặc ở gần hội trường) và đã điểm danh thành công buổi khác">Tính bù (điểm danh lỗi): ' + x.bu.map(esc).join(', ') + '</span></div>' : '') + '</td><td>' + esc(x.donVi) + '</td><td>' + (x.gcn ? '<button class="btn nho xam" onclick="xemGCNAdmin(\'' + x.maDB + '\')">Xem / in</button> ' +
     '<button class="btn nho xam" onclick="chepLinkCN(\'' + x.gcn.ma + '\')">Sao chép link</button>' : '') + '</td></tr>').join('') || '<tr><td colspan="5" class="nho">Chưa có ai.</td></tr>';
   $('cnChua').innerHTML = CN.chua.map((x, i) => '<tr><td>' + (i + 1) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + '</div></td><td>' + esc(x.donVi) +
     '</td><td>' + (x.co.map(esc).join(', ') || '—') + '</td><td style="color:#b91c1c">' + x.thieu.map(esc).join(', ') + '</td><td><button class="btn nho" onclick="xnDuGCN(\'' + x.maDB + '\')">✔ BTC xác nhận đủ</button></td></tr>').join('') || '<tr><td colspan="6" class="nho">Không có.</td></tr>';
   $('cnCapNgay').hidden = CN.daMo;
 }
+/* ---------- Điểm danh hộ: Ban Tổ chức điểm danh cho đại biểu ---------- */
+let DH = null;
+const boDauA = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+function ngayHomNay(){ const d = new Date(), p = n => ('0' + n).slice(-2); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+function veChonDH(){
+  const cu = [...document.querySelectorAll('#dhBuoi input:checked')].map(x => x.value);
+  let ngay = ngayHomNay(), ds = D.suKien.filter(s => String(s.batDau).slice(0, 10) === ngay);
+  if (!ds.length && D.suKien.length){ ngay = D.suKien.map(s => String(s.batDau).slice(0, 10)).sort().pop(); ds = D.suKien.filter(s => String(s.batDau).slice(0, 10) === ngay); }
+  ds = ds.slice().sort((a, b) => String(a.batDau) < String(b.batDau) ? -1 : 1);
+  const dang = ds.filter(s => s.giaiDoan === 'dang').map(s => s.maSK);
+  const chon = cu.filter(m => ds.some(s => s.maSK === m)).length ? cu : (dang.length ? dang : ds.map(s => s.maSK));
+  $('dhBuoi').innerHTML = ds.map(s => '<label style="display:flex;gap:6px;align-items:center;margin:0 14px 0 0;color:var(--chu);font-size:13px">' +
+    '<input type="checkbox" style="width:auto" value="' + esc(s.maSK) + '"' + (chon.includes(s.maSK) ? ' checked' : '') + ' onchange="taiDH()"> ' + esc(s.ten) +
+    ' <span class="nho">(' + esc(String(s.batDau).slice(11, 16)) + '–' + esc(String(s.ketThuc).slice(11, 16)) + ')</span></label>').join('') ||
+    '<span class="nho">Chưa có hội nghị nào — tạo ở tab Hội nghị.</span>';
+}
+async function taiDH(){
+  const buoi = [...document.querySelectorAll('#dhBuoi input:checked')].map(x => x.value);
+  if (!buoi.length){ DH = null; $('dhDs').innerHTML = '<tr><td colspan="5" class="nho">Chọn ít nhất một buổi.</td></tr>'; $('dhTT').textContent = ''; return; }
+  $('dhTT').textContent = 'Đang tải…';
+  let kq;
+  try { kq = await Promise.all(buoi.map(m => goi('adminKetQua', m))); } catch (e) { $('dhTT').textContent = ''; return loi(e); }
+  const moi = new Set();
+  const ok = kq.map(k => { const o = {}; k.thanhCong.forEach(x => { o[x.maDB] = { btc: x.btc, gio: String(x.gio).slice(0, 5) }; moi.add(x.maDB); }); k.chua.forEach(x => moi.add(x.maDB)); return o; });
+  DH = { buoi, ten: buoi.map(m => (timSK(m) || {}).ten || m), ok, ds: D.daiBieu.filter(d => moi.has(d.maDB)) };
+  $('dhTT').textContent = 'Cập nhật ' + kq[0].capNhat;
+  veDH();
+}
+const dhThieu = ma => DH.buoi.filter((m, i) => !DH.ok[i][ma]);
+function veDH(){
+  if (!DH) return;
+  const q = boDauA($('dhTim').value.trim()), loc = $('dhLoc').value;
+  const ds = DH.ds.filter(d => (!q || boDauA(d.hoTen + ' ' + d.donVi + ' ' + d.maDB).includes(q)) &&
+    (!loc || (loc === 'thieu' ? dhThieu(d.maDB).length > 0 : dhThieu(d.maDB).length === 0)));
+  const du = DH.ds.filter(d => !dhThieu(d.maDB).length).length;
+  $('dhTT').textContent = $('dhTT').textContent.replace(/ · .*$/, '') + ' · Đủ các buổi đã chọn: ' + du + '/' + DH.ds.length + ' · Đang hiện ' + Math.min(ds.length, 300) + ' người';
+  $('dhDs').innerHTML = ds.slice(0, 300).map((d, i) => {
+    const thieu = dhThieu(d.maDB);
+    const tt = DH.buoi.map((m, j) => { const x = DH.ok[j][d.maDB];
+      return '<div style="white-space:nowrap">' + (x ? '<span style="color:#15803d">✔</span> ' : '<span style="color:#b91c1c">◻</span> ') + esc(DH.ten[j]) +
+        (x ? ' <span class="nho">' + esc(x.gio) + (x.btc ? ' · BTC' : '') + '</span>' + (x.btc ? ' <a href="#" class="nho" onclick="dhHuy(\'' + d.maDB + '\',\'' + m + '\');return false">hủy</a>' : '') : '') + '</div>'; }).join('');
+    return '<tr><td>' + (i + 1) + '</td><td><b>' + esc(d.hoTen) + '</b><div class="nho">' + esc([d.chucVu, d.maDB].filter(Boolean).join(' · ')) + '</div></td><td>' + esc(d.donVi) + '</td><td>' + tt + '</td><td>' +
+      (thieu.length ? '<button class="btn nho" onclick="dhDiemDanh(\'' + d.maDB + '\')">✔ Điểm danh' + (DH.buoi.length > 1 ? ' (' + thieu.length + ' buổi)' : '') + '</button>' : '<span class="badge b-xanh">Đã đủ</span>') + '</td></tr>';
+  }).join('') || '<tr><td colspan="5" class="nho">Không có ai phù hợp.</td></tr>';
+}
+async function dhDiemDanh(ma){
+  const d = timDB(ma), thieu = dhThieu(ma), lyDo = $('dhLyDo').value.trim();
+  if (!thieu.length) return;
+  if (!lyDo) return bao('Ghi lý do trước khi điểm danh.');
+  const tenBuoi = thieu.map(m => DH.ten[DH.buoi.indexOf(m)]);
+  if (!confirm('ĐIỂM DANH cho:\n\n' + d.hoTen + '\n' + (d.donVi || '') + '\n\nBuổi: ' + tenBuoi.join(', ') + '\nLý do: ' + lyDo)) return;
+  try {
+    const r = await goi('adminXacNhanDiemDanh', ma, thieu, lyDo);
+    const gio = new Date().toTimeString().slice(0, 5);
+    thieu.forEach(m => { DH.ok[DH.buoi.indexOf(m)][ma] = { btc: true, gio }; });
+    veDH(); bao('✔ Đã điểm danh ' + d.hoTen + ' (' + r.daXacNhan + ' buổi)');
+  } catch (e) { loi(e); }
+}
+async function dhHuy(ma, maSK){
+  const d = timDB(ma);
+  if (!confirm('Hủy lượt BTC điểm danh của ' + d.hoTen + ' ở "' + DH.ten[DH.buoi.indexOf(maSK)] + '"?\nNếu đã được cấp giấy chứng nhận, giấy sẽ bị thu hồi.')) return;
+  try { await goi('adminHuyXacNhan', ma, maSK); delete DH.ok[DH.buoi.indexOf(maSK)][ma]; veDH(); bao('Đã hủy'); } catch (e) { loi(e); }
+}
+
 /* ---------- Ban Tổ chức xác nhận điểm danh ---------- */
 async function xacNhanDD(dsNguoi, dsMaSK, moTaBuoi){
   if (!dsNguoi.length) return bao('Chưa chọn đại biểu nào.');
