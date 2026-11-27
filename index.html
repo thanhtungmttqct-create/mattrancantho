@@ -223,6 +223,20 @@
     <div class="the" style="text-align:center"><div class="xoay"></div><div id="choTxt">Đang xử lý…</div></div>
   </section>
 
+  <!-- 6a. Danh sách giấy chứng nhận (index.html?ds=gcn) -->
+  <section id="scrDSGCN" class="scr" hidden>
+    <div class="the">
+      <h2 style="margin-bottom:4px">📜 Tra cứu Giấy chứng nhận</h2>
+      <div class="goi-y" id="dgTT">Đang tải danh sách…</div>
+      <label class="nhan" for="dgTim">Họ tên của bạn</label>
+      <input type="search" id="dgTim" placeholder="Gõ họ tên (không cần dấu)…" oninput="veDSGCN()">
+      <label class="nhan" for="dgDonVi">Đơn vị</label>
+      <select id="dgDonVi" onchange="veDSGCN()"></select>
+      <div class="goi-y" id="dgDem" style="margin-top:8px"></div>
+      <div class="ds-ten" id="dgDs" style="max-height:none"></div>
+    </div>
+  </section>
+
   <!-- 6. Giấy chứng nhận -->
   <section id="scrGCN" class="scr" hidden>
     <div class="the" id="gcnTT"></div>
@@ -1085,9 +1099,50 @@ function moManTrinhDuyet(tenApp){
   if (LA_ANDROID && !daThu) setTimeout(() => moBangTrinhDuyet('android'), 400);
 }
 
+/* ---------- Danh sách giấy chứng nhận chung: mỗi người tự tìm tên mình ---------- */
+const DS_GCN = new URLSearchParams(location.search).get('ds') === 'gcn';
+let DSG = [];
+async function moDSGCN(){
+  $('khoiDau').hidden = true; $('chipAI').hidden = true; $('chipGPS').hidden = true; $('canhBaoApp').hidden = true;
+  $('chanTrang').textContent = 'Tra cứu giấy chứng nhận – Ủy ban MTTQ Việt Nam thành phố Cần Thơ';
+  document.querySelector('header h1').textContent = 'GIẤY CHỨNG NHẬN'; document.title = 'Tra cứu giấy chứng nhận';
+  hien('scrDSGCN');
+  let r;
+  try { r = await goi('dsGCNCongKhai'); } catch (e) { $('dgTT').textContent = 'Không kết nối được máy chủ: ' + e.message; return; }
+  DSG = []; const cho = [];
+  r.lop.forEach(l => { if (l.daMo) l.ds.forEach(x => DSG.push(Object.assign({ tenLop: l.tenLop }, x))); else cho.push(l); });
+  $('dgTT').innerHTML = r.lop.map(l => '<b>' + esc(String(l.tenLop).replace(/\n/g, ' ')) + '</b><br>' +
+    (l.daMo ? l.ds.length + ' giấy chứng nhận đã cấp.' : 'Giấy chứng nhận được cấp từ <b>' + esc(l.moLuc) + '</b>. Vui lòng quay lại sau.')).join('<br><br>') ||
+    'Chưa có giấy chứng nhận nào.';
+  const dv = [...new Set(DSG.map(x => x.donVi || ''))].sort((a, b) => a.localeCompare(b, 'vi'));
+  $('dgDonVi').innerHTML = '<option value="">— Tất cả đơn vị —</option>' + dv.map(d => '<option>' + esc(d) + '</option>').join('');
+  veDSGCN();
+  setTimeout(() => { try { $('dgTim').focus(); } catch (e) {} }, 100);
+}
+function veDSGCN(){
+  const q = boDau($('dgTim').value.trim()), dv = $('dgDonVi').value;
+  const ds = DSG.filter(x => (!dv || (x.donVi || '') === dv) && (!q || boDau(x.hoTen).includes(q)));
+  $('dgDem').textContent = DSG.length ? (q || dv ? 'Tìm thấy ' + ds.length + ' người' : 'Gõ họ tên hoặc chọn đơn vị để tìm (' + DSG.length + ' người).') : '';
+  const hienDs = q || dv ? ds.slice(0, 100) : [];
+  $('dgDs').innerHTML = hienDs.map(x => '<label onclick="xemGCNTuDS(\'' + esc(x.ma) + '\')"><span><b>' + esc(x.hoTen) + '</b><small>' +
+    esc([x.chucVu, x.donVi].filter(Boolean).join(' — ')) + '</small><small style="color:#15803d">📜 Số ' + esc(x.so) + ' — bấm để xem</small></span></label>').join('') ||
+    (q || dv ? '<div class="goi-y" style="padding:12px">Không tìm thấy. Nếu bạn đã dự đủ các buổi mà chưa có tên, vui lòng liên hệ Ban Tổ chức.</div>' : '');
+  $('dgDs').style.display = hienDs.length || q || dv ? '' : 'none';
+}
+async function xemGCNTuDS(ma){
+  cho('Đang mở giấy chứng nhận…');
+  let r;
+  try { r = await goi('traCuuGCN', ma); } catch (e) { r = { ok: false, loi: 'Không kết nối được máy chủ: ' + e.message }; }
+  const ve = '<button class="btn btn-phu" onclick="hien(\'scrDSGCN\')">← Quay lại danh sách</button>';
+  if (!r.ok){ ketQuaLoi([r.loi]); $('kqNut').innerHTML = ve; return; }
+  veGCN(r.gcn, '<div style="color:#15803d;font-weight:700;font-size:17px">📜 ' + esc(r.gcn.hoTen) + '</div><div class="goi-y">Giấy chứng nhận số <b>' + esc(r.gcn.so) +
+    '</b>. Bấm <b>Tải ảnh</b> để lưu vào điện thoại.</div>', ve);
+}
+
 /* ---------- Khởi động ---------- */
 window.addEventListener('load', async () => {
   if (MA_GCN) return moTraCuuGCN();
+  if (DS_GCN) return moDSGCN();
   const app = (navigator.userAgent.match(/Zalo|FBAN|FBAV|Instagram|Line\//i) || [])[0];
   if (app) return moManTrinhDuyet(/zalo/i.test(app) ? 'Zalo' : /line/i.test(app) ? 'LINE' : 'Facebook/Instagram');
   if (app){ $('tenApp').textContent = /zalo/i.test(app) ? 'Zalo' : /line/i.test(app) ? 'LINE' : 'Facebook/Instagram'; $('canhBaoApp').hidden = false; }
