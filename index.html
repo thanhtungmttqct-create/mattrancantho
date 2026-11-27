@@ -835,7 +835,8 @@ async function veChaoMay(vaoDangKyTruoc){
   } else if (r.choChuyen){
     nd = '<h2>Đang chờ duyệt chuyển điện thoại</h2><div class="goi-y">Bạn đã gửi yêu cầu chuyển tên <b>' + esc(r.choChuyen.hoTen) + '</b> (' + esc(r.choChuyen.donVi || '') +
       ') sang điện thoại này. Vui lòng báo Ban Tổ chức duyệt, sau đó bấm <b>Kiểm tra lại</b>.</div>';
-    nut = '<button class="btn btn-chinh" onclick="veChaoMay()">↻ Kiểm tra lại</button>';
+    nut = (coSK ? '<button class="btn btn-chinh btn-lon" onclick="chuyenTaiHoiTruong(\'' + esc(r.choChuyen.maDB || '') + '\')">📍 Tôi đang ở hội trường – điểm danh ngay</button>' : '') +
+      '<button class="btn btn-phu" onclick="veChaoMay()">↻ Kiểm tra lại</button>';
   } else {
     nd = '<h2>Hướng dẫn</h2><div class="goi-y">1. <b>Lần đầu:</b> chọn đơn vị và họ tên của bạn. Điện thoại này sẽ được gắn với tên bạn (mỗi máy chỉ cho một người).<br>' +
       '2. <b>Các lần sau:</b> mở trang trên chính điện thoại này và bấm <b>ĐIỂM DANH</b>.<br>3. Cho phép trình duyệt truy cập <b>vị trí</b> — chỉ điểm danh được khi đang ở hội trường.</div>' +
@@ -889,6 +890,20 @@ async function guiDangKyMay(x){
       'Ban Tổ chức sẽ duyệt. <b>Nếu bạn chưa từng đăng ký</b>, có thể người khác đã chọn nhầm tên bạn — hãy báo ngay cho Ban Tổ chức.';
     return hien('scrChuyen');
   }
+  hienKetQua(r);
+}
+/** Đang chờ duyệt chuyển máy nhưng đã ở hội trường: máy chủ tự chuyển nếu cùng loại điện thoại và vị trí hợp lệ */
+async function chuyenTaiHoiTruong(ma){
+  if (!ma) return veChaoMay();
+  batDinhVi(); cho('Đang xác định vị trí của bạn…');
+  mau = { vt: await choViTri(15000) };
+  if (!mau.vt && maLoiViTri){ veChaoMay(); return hienHuongDanViTri(maLoiViTri); }
+  cho('Đang điểm danh…');
+  let r;
+  try { r = await goi('dangKyMay', Object.assign(goiViTri(), { maDB: ma, thietBi: MA_MAY })); }
+  catch (e) { return ketQuaLoi(['Lỗi kết nối máy chủ: ' + e.message], true); }
+  if (!r.ok && r.daGanMayKhac) return ketQuaLoi(['Chưa tự chuyển được sang điện thoại này (khác loại máy hoặc chưa xác định được bạn đang ở hội trường).',
+    'Vui lòng đến bàn Ban Tổ chức để được duyệt hoặc điểm danh hộ.'], true);
   hienKetQua(r);
 }
 async function guiYeuCauChuyen(){
@@ -1052,12 +1067,12 @@ function chepLinkTD(nut){
 function moManTrinhDuyet(tenApp){
   $('khoiDau').hidden = true; $('canhBaoApp').hidden = true; $('chipAI').hidden = true; $('chipGPS').hidden = true;
   $('chanTrang').textContent = 'Mỗi lần điểm danh đều ghi vị trí, thời gian và điện thoại đã dùng để đối chiếu.';
-  $('tdApp').textContent = tenApp; $('tdTen').textContent = LA_IPHONE ? 'Safari' : 'Chrome';
+  $('tdApp').textContent = tenApp; $('tdTen').textContent = LA_IPHONE ? 'Safari' : 'trình duyệt (Chrome / Samsung Internet)';
   $('tdNut').innerHTML = LA_IPHONE
     ? '<button class="btn btn-chinh btn-lon" onclick="moBangTrinhDuyet(\'safari\')">🧭 MỞ BẰNG SAFARI</button>' +
       '<button class="btn btn-phu" onclick="moBangTrinhDuyet(\'chromeIOS\')">Mở bằng Chrome</button>'
-    : '<button class="btn btn-chinh btn-lon" onclick="moBangTrinhDuyet(\'chrome\')">🌐 MỞ BẰNG CHROME</button>' +
-      '<button class="btn btn-phu" onclick="moBangTrinhDuyet(\'android\')">Mở bằng trình duyệt khác</button>';
+    : '<button class="btn btn-chinh btn-lon" onclick="moBangTrinhDuyet(\'android\')">🌐 MỞ BẰNG TRÌNH DUYỆT</button>' +
+      '<button class="btn btn-phu" onclick="moBangTrinhDuyet(\'chrome\')">Mở bằng Chrome</button>';
   $('tdNut').innerHTML += '<button class="btn btn-phu" onclick="chepLinkTD(this)">📋 Sao chép đường dẫn</button>';
   $('tdHD').innerHTML = '<b>Nếu bấm nút mà không chuyển được:</b><ol style="margin:6px 0 0;padding-left:22px;line-height:1.6">' +
     '<li>Bấm nút <b>⋯</b> (hoặc <b>⋮</b>) ở <b>góc trên bên phải</b> màn hình.</li>' +
@@ -1065,9 +1080,9 @@ function moManTrinhDuyet(tenApp){
     '<li>Trang điểm danh mở trong ' + (LA_IPHONE ? 'Safari' : 'Chrome') + ' → bật định vị → bấm <b>ĐIỂM DANH</b>.</li></ol>';
   if (!$('muiTenTD')) document.body.insertAdjacentHTML('beforeend', '<div id="muiTenTD">Bấm ⋯ ở đây ↗</div>');
   hien('scrTD');
-  // Android: tự chuyển sang Chrome ngay (1 lần mỗi phiên, tránh lặp)
+  // Android: tự mở trình duyệt mặc định của máy (1 lần mỗi phiên, tránh lặp)
   let daThu = false; try { daThu = sessionStorage.getItem('daChuyenTD') === '1'; sessionStorage.setItem('daChuyenTD', '1'); } catch (e) {}
-  if (LA_ANDROID && !daThu) setTimeout(() => moBangTrinhDuyet('chrome'), 400);
+  if (LA_ANDROID && !daThu) setTimeout(() => moBangTrinhDuyet('android'), 400);
 }
 
 /* ---------- Khởi động ---------- */
