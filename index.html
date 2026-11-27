@@ -311,6 +311,16 @@ async function veGiayCN(canvas, d, opt){
     gcnChu(c, 'Mã: ' + (d.ma || ''), 275, H - 130, 22, { mau: '#4b5563' });
   }
   if (opt.mau){ c.save(); c.translate(W / 2, H / 2); c.rotate(-0.35); gcnChu(c, 'BẢN MẪU', 0, 60, 220, { bold: true, mau: 'rgba(200,16,46,.16)' }); c.restore(); }
+  if (opt.xemTruoc){
+    // chữ XEM TRƯỚC chéo khắp giấy + dòng cảnh báo: không thể dùng thay giấy chính thức
+    c.save(); c.rotate(-0.4);
+    for (let yy = -200; yy < H + 900; yy += 300) for (let xx = -700; xx < W + 300; xx += 760)
+      gcnChu(c, 'XEM TRƯỚC', xx, yy, 92, { bold: true, mau: 'rgba(200,16,46,.13)' });
+    c.restore();
+    c.fillStyle = 'rgba(200,16,46,.9)'; c.fillRect(110, H - 205, 560, 110);
+    gcnChu(c, 'BẢN XEM TRƯỚC', 390, H - 155, 38, { bold: true, mau: '#fff' });
+    gcnChu(c, 'Không có giá trị – chưa phải giấy chính thức', 390, H - 115, 22, { mau: '#fff' });
+  }
   return canvas;
 }
 /* GCN-KET-THUC */
@@ -770,7 +780,8 @@ async function veChaoMay(vaoDangKyTruoc){
         ? '<div class="gcn-the"><b>📜 Giấy chứng nhận – ' + esc(x.tenLop) + '</b><br>Số ' + esc(x.gcn.so) + ' · Bạn đã hoàn thành đủ các buổi.</div>'
         : x.trangThai === 'cho'
         ? '<div class="gcn-the cho"><b>📜 Giấy chứng nhận – ' + esc(x.tenLop) + '</b><br>Cấp từ <b>' + esc(x.moLuc) + '</b> cho học viên điểm danh đủ các buổi:<br>' +
-          x.buoi.map(b => (b.da ? '✔ ' : '◻ ') + esc(b.ten)).join('<br>') + '</div>'
+          x.buoi.map(b => (b.da ? '✔ ' : '◻ ') + esc(b.ten)).join('<br>') +
+          (x.xemTruoc ? '<br><button class="lien-ket" onclick="xemTruocGCN(' + i + ')">👁 Xem trước giấy chứng nhận (bản demo)</button>' : '') + '</div>'
         : '<div class="gcn-the thieu"><b>📜 Giấy chứng nhận – ' + esc(x.tenLop) + '</b><br>Chưa đủ điều kiện: thiếu ' +
           x.buoi.filter(b => !b.da).map(b => esc(b.ten)).join(', ') + '. Nếu có sai sót, vui lòng liên hệ Ban Tổ chức.</div>').join('');
     nut = GCN_DS.map((x, i) => x.trangThai === 'co' ? '<button class="btn btn-chinh btn-lon" onclick="xemGCN(' + i + ')">📜 XEM GIẤY CHỨNG NHẬN</button>' : '').join('') +
@@ -912,8 +923,20 @@ function hienDaDiemDanh(t){
     '<div class="ten">' + esc(t.hoTen) + '</div>' + (t.chucVu ? '<div class="cv">' + esc(t.chucVu) + '</div>' : '') +
     veLichSu(t) + '<div class="meta">Không cần điểm danh lại.' +
     (cho ? '<br>📜 Giấy chứng nhận được cấp từ <b>' + esc(cho.moLuc) + '</b> nếu đủ các buổi — khi đó quét lại mã này để nhận.' : '') + '</div>';
-  $('kqNut').innerHTML = '<button class="btn btn-phu" onclick="veChaoChung()" id="btnVe">Về màn hình chính</button>';
+  $('kqNut').innerHTML = (cho && cho.xemTruoc ? '<button class="btn btn-phu" onclick="xemTruocGCN(' + (t.gcn || []).indexOf(cho) + ')">👁 Xem trước giấy chứng nhận (bản demo)</button>' : '') +
+    '<button class="btn btn-phu" onclick="veChaoChung()" id="btnVe">Về màn hình chính</button>';
   hien('scrKQ');
+}
+/** Bản xem trước: chỉ xem trên màn hình, có chữ XEM TRƯỚC, không số/mã/chữ ký, không tải/in */
+async function xemTruocGCN(i){
+  const x = GCN_DS[i]; if (!x || !x.xemTruoc) return;
+  gcnHienTai = null;
+  $('gcnTT').innerHTML = '<div style="color:#b45309;font-weight:700;font-size:17px">👁 Bản xem trước (demo)</div>' +
+    '<div class="goi-y">Đây chỉ là bản minh họa, <b>không có giá trị</b>. Giấy chứng nhận chính thức (có số, mã tra cứu, chữ ký) được cấp từ <b>' + esc(x.moLuc) +
+    '</b> nếu bạn điểm danh đủ các buổi:<br>' + x.buoi.map(b => (b.da ? '✔ ' : '◻ ') + esc(b.ten)).join('<br>') + '</div>';
+  $('gcnNut').innerHTML = '<button class="btn btn-phu" onclick="veChaoChung()">Về màn hình chính</button>';
+  hien('scrGCN');
+  await veGiayCN($('gcnCanvas'), x.xemTruoc, { xemTruoc: true });
 }
 const MA_GCN = (new URLSearchParams(location.search).get('gcn') || '').trim();
 function urlTraCuu(ma){ return location.origin + location.pathname + '?gcn=' + encodeURIComponent(ma); }
