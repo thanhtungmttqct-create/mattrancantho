@@ -249,6 +249,7 @@
         <select id="cnLocDV" style="max-width:220px" onchange="veDsCN()"></select>
         <button class="btn phu" onclick="inCN()">🖨 In giấy (theo bộ lọc)</button>
         <button class="btn xam" onclick="chepDsCN()">Sao chép danh sách</button>
+        <button class="btn phu" onclick="chepLinkChungCN()">🔗 Link tra cứu chung</button>
       </div>
       <div class="nho" id="cnTT" style="margin-top:8px"></div>
     </div>
@@ -984,6 +985,13 @@ async function xnDuGCN(ma){
   if (await xacNhanDD([Object.assign({}, x, { dsMaSK: x.thieuMa })], x.thieuMa, x.thieu.join(', '))) taiDsCN();
 }
 
+function chepLinkChungCN(){
+  const u = WEB_URL + '?ds=gcn';
+  moModal('<h2>🔗 Link tra cứu giấy chứng nhận chung</h2><div class="nho">Gửi link này (hoặc mã QR) lên nhóm Zalo: mỗi học viên tự tìm tên mình để xem và tải giấy chứng nhận.</div>' +
+    '<div class="hang"><input readonly value="' + esc(u) + '" id="lnkChung"><button class="btn nho" onclick="saoChep(\'lnkChung\')">Sao chép</button></div>' +
+    '<div style="text-align:center"><img src="' + anhQR(u) + '" style="width:220px;height:220px"></div>' +
+    '<div class="hang"><button class="btn xam" onclick="dongModal()">Đóng</button></div>');
+}
 function chepLinkCN(ma){ const u = WEB_URL + '?gcn=' + ma; navigator.clipboard ? navigator.clipboard.writeText(u).then(() => bao('Đã sao chép: ' + u)) : prompt('Sao chép đường dẫn:', u); }
 function chepDsCN(){
   if (!CN) return;
