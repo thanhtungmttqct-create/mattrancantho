@@ -75,6 +75,7 @@
     <button data-tab="tSK" class="on">Hội nghị</button>
     <button data-tab="tDB">Đại biểu</button>
     <button data-tab="tKQ">Kết quả</button>
+    <button data-tab="tCN">Chứng nhận</button>
     <button data-tab="tCD">Cài đặt</button>
   </nav>
 </header>
@@ -173,9 +174,58 @@
       </div>
     </div>
     <div class="so" id="kqSo"></div>
-    <div class="the cuon"><h2>Đã điểm danh</h2><table><thead><tr><th>#</th><th>Giờ</th><th>Họ tên</th><th>Đơn vị</th><th>Cách (m)</th><th>Độ lệch mặt</th><th>Đối chiếu</th></tr></thead><tbody id="kqOK"></tbody></table></div>
-    <div class="the cuon"><h2>Chưa điểm danh</h2><table><thead><tr><th>#</th><th>Mã</th><th>Họ tên</th><th>Chức vụ</th><th>Đơn vị</th><th>Đã đăng ký</th></tr></thead><tbody id="kqChua"></tbody></table></div>
+    <div class="the cuon"><h2>Đã điểm danh</h2><table><thead><tr><th>#</th><th>Giờ</th><th>Họ tên</th><th>Đơn vị</th><th>Cách (m)</th><th>Độ lệch mặt</th><th>Đối chiếu / Thao tác</th></tr></thead><tbody id="kqOK"></tbody></table></div>
+    <div class="the cuon"><div class="hang" style="margin-top:0"><h2 style="margin:0;flex:1">Chưa điểm danh</h2>
+      <button class="btn nho" onclick="xnNhieu()">✔ BTC xác nhận các người đã chọn</button></div>
+      <div class="nho" style="margin:6px 0">Đại biểu <b>có mặt</b> nhưng không điểm danh được (máy lỗi, mất GPS, hết pin…): Ban Tổ chức kiểm tra trực tiếp rồi bấm <b>BTC xác nhận</b> và ghi lý do. Lượt xác nhận được tính như điểm danh thành công (kể cả để cấp giấy chứng nhận).</div>
+      <table><thead><tr><th><input type="checkbox" style="width:auto" onchange="document.querySelectorAll('#kqChua input[type=checkbox]').forEach(x => x.checked = this.checked)"></th><th>#</th><th>Mã</th><th>Họ tên</th><th>Chức vụ</th><th>Đơn vị</th><th>Đã đăng ký</th><th>Thao tác</th></tr></thead><tbody id="kqChua"></tbody></table></div>
     <div class="the cuon"><h2>Lượt bị từ chối (đối chiếu chống điểm danh hộ)</h2><table><thead><tr><th>Giờ</th><th>Họ tên</th><th>Lý do</th><th>Cách (m)</th><th>Độ lệch mặt</th><th>Đối chiếu</th></tr></thead><tbody id="kqTC"></tbody></table></div>
+  </section>
+
+  <!-- CHỨNG NHẬN -->
+  <section id="tCN" class="tab" hidden>
+    <div class="the">
+      <h2>Giấy chứng nhận hoàn thành</h2>
+      <div class="nho">Học viên điểm danh <b>thành công ở tất cả các buổi được chọn</b> sẽ tự nhận giấy chứng nhận trên điện thoại đã đăng ký, bắt đầu từ <b>giờ mở nhận</b>.
+        Giấy có số thứ tự và mã QR để tra cứu thật/giả.</div>
+      <div class="hang"><select id="cnChon" style="max-width:480px" onchange="moCN(this.value)"></select></div>
+      <input type="hidden" id="cnMa">
+      <div class="luoi">
+        <div style="grid-column:1/-1"><label>Tên lớp / hội nghị (in trên giấy) * — xuống dòng bằng dấu |</label><input id="cnTen" placeholder="VD: Hội nghị tập huấn nghiệp vụ công tác Mặt trận năm 2026"></div>
+        <div style="grid-column:1/-1"><label>Các buổi bắt buộc * (đủ tất cả mới được cấp)</label><div id="cnBuoi" class="hang" style="margin-top:2px"></div></div>
+        <div><label>Mở nhận giấy chứng nhận từ *</label><input type="datetime-local" id="cnMo"></div>
+        <div><label>Ký hiệu số giấy</label><input id="cnKH" placeholder="GCN-MTTQ"></div>
+        <div style="grid-column:1/-1"><label>Dòng thời gian, địa điểm (để trống = không in)</label><input id="cnTG" placeholder="Để trống = không in dòng này"></div>
+        <div><label>Tên cơ quan (góc trái, mỗi dòng cách nhau bằng dấu |)</label><input id="cnCQ" placeholder="ỦY BAN MẶT TRẬN TỔ QUỐC VIỆT NAM|THÀNH PHỐ CẦN THƠ|BAN THƯỜNG TRỰC"></div>
+        <div><label>Lời chứng nhận dưới tiêu đề (để trống = không in)</label><input id="cnLoi" placeholder="Để trống = không in dòng này"></div>
+        <div><label>Địa danh, ngày tháng</label><input id="cnNgay" placeholder="Cần Thơ, ngày 27 tháng 11 năm 2026"></div>
+        <div><label>Thẩm quyền ký</label><input id="cnTM" placeholder="TL. BAN THƯỜNG TRỰC"></div>
+        <div><label>Chức vụ người ký</label><input id="cnCV" placeholder="PHÓ CHÁNH VĂN PHÒNG"></div>
+        <div><label>Họ tên người ký</label><input id="cnNK" placeholder="Họ và tên"></div>
+      </div>
+      <div class="hang">
+        <button class="btn" onclick="luuCN()">Lưu cấu hình</button>
+        <button class="btn phu" onclick="xemMauCN()">👁 Xem mẫu</button>
+        <label class="btn phu" style="margin:0;color:var(--do)">🖋 Ảnh chữ ký + dấu (PNG nền trong)<input type="file" accept="image/png,image/jpeg" class="an" onchange="taiChuKy(this.files[0]);this.value=''"></label>
+        <span class="nho" id="cnCK"></span>
+        <button class="btn nho xam" id="cnXoa" onclick="xoaCN()" style="margin-left:auto">Xóa cấu hình</button>
+      </div>
+    </div>
+    <div class="the">
+      <div class="hang" style="margin-top:0">
+        <h2 style="margin:0;flex:1" id="cnTieuDe">Danh sách cấp giấy</h2>
+        <button class="btn" onclick="taiDsCN()">Làm mới</button>
+        <button class="btn phu" id="cnCapNgay" onclick="taiDsCN(true)">Cấp số ngay</button>
+        <select id="cnLocDV" style="max-width:220px" onchange="veDsCN()"></select>
+        <button class="btn phu" onclick="inCN()">🖨 In giấy (theo bộ lọc)</button>
+        <button class="btn xam" onclick="chepDsCN()">Sao chép danh sách</button>
+      </div>
+      <div class="nho" id="cnTT" style="margin-top:8px"></div>
+    </div>
+    <div class="so" id="cnSo"></div>
+    <div class="the cuon"><h2>Đủ điều kiện</h2><table><thead><tr><th>#</th><th>Số giấy</th><th>Họ tên</th><th>Đơn vị</th><th>Thao tác</th></tr></thead><tbody id="cnDu"></tbody></table></div>
+    <div class="the cuon"><h2>Chưa đủ điều kiện</h2><div class="nho" style="margin-bottom:6px">Người có mặt đủ buổi nhưng điểm danh bị lỗi: bấm <b>BTC xác nhận đủ</b>, ghi lý do → được cấp giấy chứng nhận.</div>
+      <table><thead><tr><th>#</th><th>Họ tên</th><th>Đơn vị</th><th>Đã điểm danh</th><th>Thiếu</th><th>Thao tác</th></tr></thead><tbody id="cnChua"></tbody></table></div>
   </section>
 
   <!-- CÀI ĐẶT -->
@@ -215,6 +265,96 @@
 <div id="vungIn"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+/* GCN-BAT-DAU */
+/* ===== Vẽ Giấy chứng nhận (A4 ngang) lên canvas — dùng chung cho index.html và admin.html ===== */
+const GCN_W = 2000, GCN_H = 1414;
+const GCN_FONT = '"Times New Roman", "Noto Serif", "Liberation Serif", "DejaVu Serif", serif';
+function gcnNapAnh(src){ return new Promise(ok => { if (!src) return ok(null); const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; }); }
+function gcnNapQRLib(){
+  return new Promise(ok => {
+    if (typeof qrcode !== 'undefined') return ok(true);
+    const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+    sc.onload = () => ok(true); sc.onerror = () => ok(false); document.head.appendChild(sc);
+  });
+}
+function gcnNgat(ctx, text, maxW){
+  const words = String(text || '').split(/\s+/).filter(Boolean), out = []; let dong = '';
+  words.forEach(w => { const thu = dong ? dong + ' ' + w : w; if (ctx.measureText(thu).width > maxW && dong){ out.push(dong); dong = w; } else dong = thu; });
+  if (dong) out.push(dong);
+  return out;
+}
+function gcnChu(ctx, text, x, y, size, opt){
+  opt = opt || {};
+  ctx.font = (opt.italic ? 'italic ' : '') + (opt.bold ? 'bold ' : '') + size + 'px ' + GCN_FONT;
+  ctx.fillStyle = opt.mau || '#1f2937'; ctx.textAlign = opt.canh || 'center'; ctx.textBaseline = 'alphabetic';
+  const lines = String(text || '').split(/\n/).reduce((a, d) => a.concat(opt.maxW ? gcnNgat(ctx, d, opt.maxW) : [d]), []);
+  // co chữ nếu quá số dòng cho phép
+  if (opt.maxW && opt.toiDa && lines.length > opt.toiDa && size > 20) return gcnChu(ctx, text, x, y, size - 2, opt);
+  lines.forEach((l, i) => ctx.fillText(l, x, y + i * size * (opt.gian || 1.3)));
+  return y + (lines.length - 1) * size * (opt.gian || 1.3);
+}
+/** d: dữ liệu giấy (máy chủ trả về). opt: { chuKy: dataURL, url: đường dẫn tra cứu, mau: true = bản mẫu } */
+async function veGiayCN(canvas, d, opt){
+  opt = opt || {};
+  canvas.width = GCN_W; canvas.height = GCN_H;
+  const c = canvas.getContext('2d'), DO = '#b3121f', VANG = '#c9a227', W = GCN_W, H = GCN_H;
+  c.fillStyle = '#fffdf6'; c.fillRect(0, 0, W, H);
+  // khung viền
+  c.strokeStyle = DO; c.lineWidth = 16; c.strokeRect(46, 46, W - 92, H - 92);
+  c.strokeStyle = VANG; c.lineWidth = 4; c.strokeRect(74, 74, W - 148, H - 148);
+  c.lineWidth = 2; c.strokeRect(86, 86, W - 172, H - 172);
+  [[86, 86], [W - 86, 86], [86, H - 86], [W - 86, H - 86]].forEach(([x, y]) => {
+    c.save(); c.translate(x, y); c.rotate(Math.PI / 4); c.fillStyle = DO; c.fillRect(-14, -14, 28, 28);
+    c.fillStyle = VANG; c.fillRect(-7, -7, 14, 14); c.restore();
+  });
+
+  // Quốc hiệu (phải) + cơ quan (trái)
+  const xT = 520, xP = 1440;
+  const cq = String(d.coQuan || '').split(/\n/).filter(Boolean);
+  cq.forEach((l, i) => gcnChu(c, l.toUpperCase(), xT, 170 + i * 42, 30, { bold: i === cq.length - 1 }));
+  const yCq = 170 + (cq.length - 1) * 42;
+  c.strokeStyle = '#1f2937'; c.lineWidth = 2; c.beginPath(); c.moveTo(xT - 90, yCq + 16); c.lineTo(xT + 90, yCq + 16); c.stroke();
+  gcnChu(c, 'Số: ' + (d.so || '…/' + 'GCN'), xT, yCq + 62, 28);
+  gcnChu(c, 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', xP, 170, 30, { bold: true });
+  gcnChu(c, 'Độc lập - Tự do - Hạnh phúc', xP, 214, 32, { bold: true });
+  c.beginPath(); c.moveTo(xP - 190, 230); c.lineTo(xP + 190, 230); c.stroke();
+
+  // Tiêu đề + nội dung
+  let y = 470;
+  gcnChu(c, 'GIẤY CHỨNG NHẬN', W / 2, y, 104, { bold: true, mau: DO });
+  y = d.loiChungNhan ? gcnChu(c, d.loiChungNhan, W / 2, y + 84, 36, { italic: true, maxW: 1500, toiDa: 2 }) + 90 : y + 115;
+  gcnChu(c, 'Đồng chí:', 470, y, 38, { canh: 'left', italic: true });
+  gcnChu(c, String(d.hoTen || '').toUpperCase(), W / 2 + 60, y + 2, 58, { bold: true, mau: '#7a0c16' });
+  const cv = [d.chucVu, d.donVi].filter(Boolean).join(' – ');
+  if (!cv) y -= 30;
+  if (cv) y = gcnChu(c, cv, W / 2, y + 66, 34, { maxW: 1460, toiDa: 2, gian: 1.25 });
+  y = gcnChu(c, 'Đã tham dự đầy đủ và hoàn thành chương trình', W / 2, y + 74, 36, { italic: true });
+  y = gcnChu(c, d.tenLop, W / 2, y + 66, 44, { bold: true, maxW: 1640, toiDa: 3, gian: 1.25, mau: '#111827' });
+  if (d.thoiGianDiaDiem) y = gcnChu(c, d.thoiGianDiaDiem, W / 2, y + 58, 32, { italic: true, maxW: 1460, toiDa: 2 });
+
+  // Ký tên (phải)
+  const yK = Math.min(Math.max(y + 80, 970), H - 124 - 330);
+  gcnChu(c, d.diaDanhNgay, xP, yK, 32, { italic: true });
+  if (d.thayMat) gcnChu(c, String(d.thayMat).toUpperCase(), xP, yK + 48, 32, { bold: true });
+  gcnChu(c, String(d.chucVuKy || '').toUpperCase(), xP, yK + 90, 32, { bold: true });
+  const ck = await gcnNapAnh(opt.chuKy);
+  if (ck){ const h = Math.min(250, 620 * ck.height / ck.width), w = ck.width * h / ck.height; c.drawImage(ck, xP - w / 2, yK + 70 + (250 - h) / 2, w, h); }
+  gcnChu(c, d.nguoiKy, xP, yK + 340, 38, { bold: true });
+
+  // Mã QR tra cứu (trái dưới)
+  if (opt.url && await gcnNapQRLib() && typeof qrcode !== 'undefined'){
+    const q = qrcode(0, 'M'); q.addData(opt.url); q.make();
+    const img = await gcnNapAnh(q.createDataURL(6, 1));
+    if (img){ c.drawImage(img, 170, H - 400, 210, 210); }
+    gcnChu(c, 'Quét mã để tra cứu', 275, H - 160, 22, { mau: '#4b5563' });
+    gcnChu(c, 'Mã: ' + (d.ma || ''), 275, H - 130, 22, { mau: '#4b5563' });
+  }
+  if (opt.mau){ c.save(); c.translate(W / 2, H / 2); c.rotate(-0.35); gcnChu(c, 'BẢN MẪU', 0, 60, 220, { bold: true, mau: 'rgba(200,16,46,.16)' }); c.restore(); }
+  return canvas;
+}
+/* GCN-KET-THUC */
+</script>
 <script>
 /* ======= DÁN ĐƯỜNG DẪN WEB APP APPS SCRIPT (kết thúc bằng /exec) VÀO ĐÂY ======= */
 const API_URL = 'https://script.google.com/macros/s/AKfycbweVW70kfGNx-RMSTIbqViS0CLwLarf-SiCWVTFj6se5O5u4nl9n9sPAJhhX8Gm1wlZNA/exec';
@@ -275,6 +415,7 @@ function moTab(id){
   document.querySelectorAll('.tab').forEach(t => t.hidden = t.id !== id);
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
   if (id === 'tKQ') taiKQ();
+  if (id === 'tCN'){ veChonCN(); if ($('cnMa').value) taiDsCN(); }
 }
 function nhanDuLieu(d){
   D = d;
@@ -286,7 +427,7 @@ function nhanDuLieu(d){
   $('hangMatLoat').classList.toggle('an', !c.DUNG_KHUON_MAT); $('thDK').textContent = c.DUNG_KHUON_MAT ? 'Khuôn mặt' : 'Điện thoại';
   $('ttTruoc').innerHTML = c.DANG_KY_TRUOC ? 'Đang <b>mở</b> đăng ký trước' + (c.MA_DANG_KY_TRUOC ? ' · mã đăng ký: <b>' + esc(c.MA_DANG_KY_TRUOC) + '</b>' : ' · không cần mã') + ' (đổi ở tab Cài đặt).'
     : 'Đăng ký trước đang <b>tắt</b> (bật ở tab Cài đặt).';
-  veSK(); veLocNhom(); veDB(); veChonSK();
+  veSK(); veLocNhom(); veDB(); veChonSK(); if (!$('tCN').hidden) veChonCN();
 }
 async function lamMoi(){ try { nhanDuLieu(await goi('adminLayDuLieu')); } catch (e) { loi(e); } }
 
@@ -431,7 +572,9 @@ async function xoaDB(ma){ if (!confirm('Xóa đại biểu ' + ma + ' khỏi dan
 
 /* ---------- Mã QR chung & áp phích ---------- */
 function anhQR(text){ const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createDataURL(10, 2); }
+function boInNgang(){ const st = document.getElementById('inNgang'); if (st) st.textContent = ''; }
 function inPoster(ma){
+  boInNgang();
   const s = timSK(ma);
   $('vungIn').innerHTML = '<div class="pt-dau"><small>ỦY BAN MTTQ VIỆT NAM THÀNH PHỐ CẦN THƠ</small><b>ĐIỂM DANH ĐẠI BIỂU</b></div>' +
     '<div class="pt-ten">' + esc(s.ten) + '</div><div class="pt-tt">' + esc(s.diaDiem || '') + ' · ' + esc(s.batDauHT) + '</div>' +
@@ -447,6 +590,7 @@ function inPoster(ma){
   setTimeout(() => window.print(), 300);
 }
 function inQRDangKyTruoc(){
+  boInNgang();
   const c = D.cauHinh;
   if (!c.DANG_KY_TRUOC) return bao('Hãy bật "Đăng ký trước tại nhà" ở tab Cài đặt trước khi in.');
   const mot = '<div style="border:1px dashed #999;border-radius:3mm;padding:5mm;break-inside:avoid;page-break-inside:avoid;text-align:center">' +
@@ -461,6 +605,181 @@ function inQRDangKyTruoc(){
   $('vungIn').innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8mm">' + mot.repeat(4) + '</div>';
   setTimeout(() => window.print(), 300);
 }
+/* ---------- Giấy chứng nhận ---------- */
+let CN = null, chuKyCN = {};
+const GCN_MD = { tenLop: 'Bồi dưỡng công tác chuyển đổi số và kỹ năng bảo vệ nền tảng tư tưởng của Đảng,\nđấu tranh phản bác các quan điểm sai trái, thù địch trong tình hình mới\nnăm 2026',
+  coQuan: 'ỦY BAN MẶT TRẬN TỔ QUỐC VIỆT NAM\nTHÀNH PHỐ CẦN THƠ\nBAN THƯỜNG TRỰC', thayMat: 'TL. BAN THƯỜNG TRỰC', chucVuKy: 'PHÓ CHÁNH VĂN PHÒNG', nguoiKy: 'Trương Thanh Tùng' };
+
+function veChonCN(){
+  const ds = D.chungNhan || [], cu = $('cnMa').value;
+  $('cnChon').innerHTML = ds.map(c => '<option value="' + esc(c.maCN) + '">' + esc(c.maCN + ' — ' + String(c.tenLop).replace(/\n/g, ' ')) + '</option>').join('') + '<option value="">+ Tạo cấu hình mới…</option>';
+  const chon = ds.find(c => c.maCN === cu) ? cu : (ds[0] ? ds[0].maCN : '');
+  $('cnChon').value = chon; moCN(chon, true);
+}
+function moCN(ma, giuDs){
+  const c = (D.chungNhan || []).find(x => x.maCN === ma) || null;
+  $('cnMa').value = c ? c.maCN : '';
+  const skMacDinh = c ? c.dsSuKien : D.suKien.slice(-2).map(s => s.maSK);
+  $('cnBuoi').innerHTML = D.suKien.map(s => '<label style="display:flex;gap:6px;align-items:center;margin:0 14px 0 0;color:var(--chu);font-size:13px">' +
+    '<input type="checkbox" style="width:auto" value="' + esc(s.maSK) + '"' + (skMacDinh.includes(s.maSK) ? ' checked' : '') + '> ' + esc(s.ten) +
+    ' <span class="nho">(' + esc(s.batDauHT) + ')</span></label>').join('') || '<span class="nho">Chưa có buổi nào — tạo ở tab Hội nghị.</span>';
+  const skCuoi = D.suKien.filter(s => skMacDinh.includes(s.maSK)).map(s => s.ketThuc).sort().pop();
+  const ngay = (skCuoi || new Date(Date.now() + 7 * 36e5).toISOString()).slice(0, 10);
+  const [yy, mm, dd] = ngay.split('-');
+  $('cnTen').value = String(c ? c.tenLop : GCN_MD.tenLop).replace(/\n/g, ' | ');
+  $('cnMo').value = c ? c.moLuc : ngay + 'T17:00';
+  $('cnKH').value = c ? c.kyHieu : '';
+  const sk0 = D.suKien.find(s => skMacDinh.includes(s.maSK));
+  $('cnTG').value = c ? c.thoiGianDiaDiem : '';
+  $('cnCQ').value = String(c ? c.coQuan || '' : GCN_MD.coQuan).replace(/\n/g, '|');
+  $('cnLoi').value = c ? c.loiChungNhan : '';
+  $('cnNgay').value = c ? c.diaDanhNgay : 'Cần Thơ, ngày ' + dd + ' tháng ' + mm + ' năm ' + yy;
+  $('cnTM').value = c ? c.thayMat : GCN_MD.thayMat; $('cnCV').value = c ? c.chucVuKy : GCN_MD.chucVuKy; $('cnNK').value = c ? c.nguoiKy : GCN_MD.nguoiKy;
+  $('cnCK').textContent = c ? (c.coChuKy ? '✔ Đã có ảnh chữ ký + dấu' : 'Chưa có ảnh chữ ký (giấy sẽ để trống chỗ ký)') : '';
+  $('cnXoa').hidden = !c;
+  if (!giuDs || !c){ CN = null; $('cnDu').innerHTML = ''; $('cnChua').innerHTML = ''; $('cnSo').innerHTML = ''; $('cnTT').textContent = c ? '' : 'Lưu cấu hình để xem danh sách.'; }
+  if (c && !giuDs) taiDsCN();
+}
+function docFormCN(){
+  return { maCN: $('cnMa').value, tenLop: $('cnTen').value.split('|').map(x => x.trim()).filter(Boolean).join('\n'), moLuc: $('cnMo').value, kyHieu: $('cnKH').value, thoiGianDiaDiem: $('cnTG').value,
+    dsSuKien: [...$('cnBuoi').querySelectorAll('input:checked')].map(x => x.value),
+    coQuan: $('cnCQ').value.split('|').map(x => x.trim()).filter(Boolean).join('\n'), loiChungNhan: $('cnLoi').value, diaDanhNgay: $('cnNgay').value,
+    thayMat: $('cnTM').value, chucVuKy: $('cnCV').value, nguoiKy: $('cnNK').value };
+}
+async function luuCN(){
+  try { const r = await goi('adminLuuGCN', docFormCN()); D.chungNhan = r.ds; $('cnMa').value = r.maCN; veChonCN(); taiDsCN(); bao('Đã lưu cấu hình giấy chứng nhận'); }
+  catch (e) { loi(e); }
+}
+async function xoaCN(){
+  const ma = $('cnMa').value; if (!ma || !confirm('Xóa cấu hình ' + ma + ' và TẤT CẢ giấy chứng nhận đã cấp theo cấu hình này?')) return;
+  try { D.chungNhan = await goi('adminXoaGCN', ma); $('cnMa').value = ''; veChonCN(); bao('Đã xóa'); } catch (e) { loi(e); }
+}
+function anhNho(file, maxW){
+  return new Promise((ok, no) => { const img = new Image(); img.onload = () => {
+    const k = Math.min(1, maxW / img.width), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); ok(c.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.9)); };
+    img.onerror = () => no(new Error('Không đọc được ảnh')); img.src = URL.createObjectURL(file); });
+}
+async function taiChuKy(file){
+  const ma = $('cnMa').value; if (!file) return; if (!ma) return bao('Hãy lưu cấu hình trước.');
+  try { const du = await anhNho(file, 900); $('cnCK').textContent = 'Đang tải lên…';
+    D.chungNhan = await goi('adminLuuChuKy', ma, du); delete chuKyCN[ma]; moCN(ma, true); bao('Đã lưu ảnh chữ ký + dấu'); }
+  catch (e) { loi(e); moCN(ma, true); }
+}
+async function layChuKyCN(ma){
+  if (!(ma in chuKyCN)) { const c = (D.chungNhan || []).find(x => x.maCN === ma); chuKyCN[ma] = c && c.coChuKy ? await goi('adminLayChuKy', ma) : ''; }
+  return chuKyCN[ma];
+}
+async function xemMauCN(){
+  const f = docFormCN();
+  const d = { so: '001/' + (f.kyHieu || 'GCN-MTTQ'), ma: 'G0000000000', hoTen: 'Nguyễn Văn Mẫu', chucVu: 'Phó Chủ tịch Ủy ban MTTQ Việt Nam', donVi: 'Phường Ninh Kiều',
+    tenLop: f.tenLop, thoiGianDiaDiem: f.thoiGianDiaDiem, coQuan: f.coQuan, loiChungNhan: f.loiChungNhan, diaDanhNgay: f.diaDanhNgay,
+    thayMat: f.thayMat, chucVuKy: f.chucVuKy, nguoiKy: f.nguoiKy };
+  moModal('<h2>Bản mẫu giấy chứng nhận</h2><canvas id="cnMauCv" style="width:100%;border:1px solid var(--vien);border-radius:8px"></canvas>' +
+    '<p class="nho">Bấm "Lưu cấu hình" để áp dụng. Ảnh chữ ký chỉ hiện sau khi đã lưu cấu hình và tải ảnh lên.</p><div class="hang"><button class="btn xam" onclick="dongModal()">Đóng</button></div>');
+  $('modalNoiDung').style.maxWidth = '900px';
+  let ck = ''; try { if ($('cnMa').value) ck = await layChuKyCN($('cnMa').value); } catch (e) {}
+  veGiayCN($('cnMauCv'), d, { chuKy: ck, url: WEB_URL + '?gcn=G0000000000', mau: true });
+}
+async function taiDsCN(capNgay){
+  const ma = $('cnMa').value; if (!ma) return;
+  if (capNgay && !confirm('Cấp số giấy chứng nhận NGAY cho những người đã đủ điều kiện (kể cả trước giờ mở nhận)?\nĐại biểu vẫn chỉ xem được giấy trên điện thoại từ giờ mở nhận.')) return;
+  $('cnTT').textContent = 'Đang tải…';
+  try { CN = await goi('adminDsGCN', ma, !!capNgay); } catch (e) { $('cnTT').textContent = ''; return loi(e); }
+  const cu = $('cnLocDV').value, dv = [...new Set(CN.du.map(x => x.donVi || ''))].sort();
+  $('cnLocDV').innerHTML = '<option value="">Tất cả đơn vị (' + CN.du.length + ')</option>' + dv.map(d => '<option>' + esc(d) + '</option>').join('');
+  if (dv.includes(cu)) $('cnLocDV').value = cu;
+  veDsCN();
+}
+const dsCNLoc = () => CN.du.filter(x => !$('cnLocDV').value || (x.donVi || '') === $('cnLocDV').value);
+function veDsCN(){
+  if (!CN) return;
+  $('cnTieuDe').textContent = 'Danh sách cấp giấy — ' + String(CN.tenLop).replace(/\n/g, ' ');
+  $('cnTT').innerHTML = 'Buổi bắt buộc: <b>' + CN.buoi.map(esc).join(', ') + '</b> · Mở nhận: <b>' + esc(CN.moLuc) + '</b> ' +
+    (CN.daMo ? '<span class="badge b-xanh">Đã mở — đại biểu đang nhận giấy trên điện thoại</span>' : '<span class="badge b-vang">Chưa đến giờ mở</span>') +
+    ' · Cập nhật ' + esc(CN.capNhat) + (CN.thuHoi.length ? '<br><b style="color:#b91c1c">⚠ ' + CN.thuHoi.length + ' giấy đã cấp nay không còn hợp lệ (lượt điểm danh bị hủy): ' +
+      CN.thuHoi.map(x => esc(x.so + ' ' + x.hoTen)).join('; ') + '</b>' : '');
+  $('cnSo').innerHTML = '<div><b style="color:#15803d">' + CN.du.length + '</b>Đủ điều kiện</div><div><b>' + CN.soDaCap + '</b>Đã cấp số</div>' +
+    '<div><b style="color:#b91c1c">' + CN.chua.length + '</b>Chưa đủ điều kiện</div>';
+  $('cnDu').innerHTML = dsCNLoc().map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + (x.gcn ? esc(x.gcn.so) : '<span class="nho">chưa cấp</span>') + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' +
+    esc(x.chucVu || '') + '</div>' + (x.btc && x.btc.length ? '<div class="nho"><span class="badge b-vang">BTC xác nhận: ' + x.btc.map(esc).join(', ') + '</span></div>' : '') + '</td><td>' + esc(x.donVi) + '</td><td>' + (x.gcn ? '<button class="btn nho xam" onclick="xemGCNAdmin(\'' + x.maDB + '\')">Xem / in</button> ' +
+    '<button class="btn nho xam" onclick="chepLinkCN(\'' + x.gcn.ma + '\')">Sao chép link</button>' : '') + '</td></tr>').join('') || '<tr><td colspan="5" class="nho">Chưa có ai.</td></tr>';
+  $('cnChua').innerHTML = CN.chua.map((x, i) => '<tr><td>' + (i + 1) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + '</div></td><td>' + esc(x.donVi) +
+    '</td><td>' + (x.co.map(esc).join(', ') || '—') + '</td><td style="color:#b91c1c">' + x.thieu.map(esc).join(', ') + '</td><td><button class="btn nho" onclick="xnDuGCN(\'' + x.maDB + '\')">✔ BTC xác nhận đủ</button></td></tr>').join('') || '<tr><td colspan="6" class="nho">Không có.</td></tr>';
+  $('cnCapNgay').hidden = CN.daMo;
+}
+/* ---------- Ban Tổ chức xác nhận điểm danh ---------- */
+async function xacNhanDD(dsNguoi, dsMaSK, moTaBuoi){
+  if (!dsNguoi.length) return bao('Chưa chọn đại biểu nào.');
+  const ten = dsNguoi.map(x => x.hoTen + ' (' + (x.donVi || '') + ')');
+  const lyDo = prompt('BAN TỔ CHỨC XÁC NHẬN đã tham dự ' + moTaBuoi + ':\n\n' + ten.slice(0, 15).join('\n') + (ten.length > 15 ? '\n… và ' + (ten.length - 15) + ' người khác' : '') +
+    '\n\nGhi lý do (bắt buộc), ví dụ: Có mặt, điện thoại hết pin – BTC kiểm tra trực tiếp', 'Có mặt nhưng không điểm danh được – BTC kiểm tra trực tiếp');
+  if (lyDo === null) return false;
+  if (!lyDo.trim()) { bao('Phải ghi lý do xác nhận.'); return false; }
+  let n = 0;
+  try { for (const x of dsNguoi){ n += (await goi('adminXacNhanDiemDanh', x.maDB, x.dsMaSK || dsMaSK, lyDo)).daXacNhan; } }
+  catch (e) { loi(e); return false; }
+  bao('Đã xác nhận ' + n + ' lượt điểm danh.'); return true;
+}
+async function xnMot(ma){
+  const x = KQ.chua.find(v => v.maDB === ma), sk = timSK($('kqSK').value);
+  if (x && await xacNhanDD([x], [sk.maSK], '"' + sk.ten + '"')) taiKQ();
+}
+async function xnNhieu(){
+  const chon = [...document.querySelectorAll('#kqChua input[type=checkbox]:checked')].map(i => KQ.chua.find(v => v.maDB === i.value)).filter(Boolean);
+  const sk = timSK($('kqSK').value);
+  if (await xacNhanDD(chon, [sk.maSK], '"' + sk.ten + '"')) taiKQ();
+}
+async function huyXN(ma){
+  const sk = timSK($('kqSK').value), x = KQ.ok.find(v => v.maDB === ma);
+  if (!confirm('Hủy lượt BTC xác nhận của ' + (x ? x.hoTen : ma) + ' ở "' + sk.ten + '"?\nNếu người này đã được cấp giấy chứng nhận, giấy sẽ bị thu hồi.')) return;
+  try { await goi('adminHuyXacNhan', ma, sk.maSK); bao('Đã hủy xác nhận'); taiKQ(); } catch (e) { loi(e); }
+}
+async function xnDuGCN(ma){
+  const x = CN.chua.find(v => v.maDB === ma); if (!x) return;
+  if (await xacNhanDD([Object.assign({}, x, { dsMaSK: x.thieuMa })], x.thieuMa, x.thieu.join(', '))) taiDsCN();
+}
+
+function chepLinkCN(ma){ const u = WEB_URL + '?gcn=' + ma; navigator.clipboard ? navigator.clipboard.writeText(u).then(() => bao('Đã sao chép: ' + u)) : prompt('Sao chép đường dẫn:', u); }
+function chepDsCN(){
+  if (!CN) return;
+  const t = dsCNLoc().map((x, i) => (i + 1) + '. ' + x.hoTen + ' – ' + (x.donVi || '') + (x.gcn ? ' – Số ' + x.gcn.so + ' – ' + WEB_URL + '?gcn=' + x.gcn.ma : ' – chưa cấp')).join('\n');
+  navigator.clipboard ? navigator.clipboard.writeText(t).then(() => bao('Đã sao chép ' + dsCNLoc().length + ' dòng')) : prompt('Sao chép:', t);
+}
+async function xemGCNAdmin(maDB){
+  const x = CN.du.find(v => v.maDB === maDB); if (!x || !x.gcn) return;
+  moModal('<h2>' + esc(x.gcn.so + ' — ' + x.hoTen) + '</h2><canvas id="cnXemCv" style="width:100%;border:1px solid var(--vien);border-radius:8px"></canvas>' +
+    '<div class="hang"><button class="btn" onclick="inCN(\'' + maDB + '\')">🖨 In giấy này</button><button class="btn phu" onclick="taiAnhCN()">⬇ Tải ảnh</button><button class="btn xam" onclick="dongModal()">Đóng</button></div>');
+  $('modalNoiDung').style.maxWidth = '900px';
+  await veGiayCN($('cnXemCv'), x.gcn, { chuKy: await layChuKyCN(CN.maCN), url: WEB_URL + '?gcn=' + x.gcn.ma });
+  $('cnXemCv').dataset.ten = x.hoTen;
+}
+function taiAnhCN(){
+  const cv = $('cnXemCv'); cv.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+    a.download = 'GCN_' + (cv.dataset.ten || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^A-Za-z0-9]+/g, '_') + '.jpg';
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/jpeg', 0.92);
+}
+async function inCN(maDB){
+  if (!CN) return;
+  const ds = (maDB ? CN.du.filter(x => x.maDB === maDB) : dsCNLoc()).filter(x => x.gcn);
+  if (!ds.length) return bao('Chưa có giấy nào được cấp số. Bấm "Cấp số ngay" hoặc chờ đến giờ mở nhận.');
+  if (ds.length > 60 && !confirm('In ' + ds.length + ' giấy cùng lúc có thể chậm. Nên lọc theo đơn vị. Tiếp tục?')) return;
+  const ck = await layChuKyCN(CN.maCN), cv = document.createElement('canvas'), anh = [];
+  for (let i = 0; i < ds.length; i++){
+    bao('Đang chuẩn bị giấy ' + (i + 1) + '/' + ds.length + '…', 60000);
+    await veGiayCN(cv, ds[i].gcn, { chuKy: ck, url: WEB_URL + '?gcn=' + ds[i].gcn.ma });
+    anh.push(URL.createObjectURL(await new Promise(ok => cv.toBlob(ok, 'image/jpeg', 0.9))));
+  }
+  bao('Đã chuẩn bị ' + ds.length + ' giấy — mở hộp thoại in (chọn khổ A4, hướng NGANG).', 6000);
+  let st = document.getElementById('inNgang');
+  if (!st){ st = document.createElement('style'); st.id = 'inNgang'; document.head.appendChild(st); }
+  st.textContent = '@media print{@page{size:A4 landscape;margin:0} #vungIn img{width:100%;display:block;page-break-after:always;break-after:page} #vungIn img:last-child{page-break-after:auto;break-after:auto}}';
+  $('vungIn').innerHTML = anh.map(u => '<img src="' + u + '">').join('');
+  await Promise.all([...$('vungIn').querySelectorAll('img')].map(i => i.decode().catch(() => {})));
+  window.print();
+  setTimeout(() => { st.textContent = ''; anh.forEach(u => URL.revokeObjectURL(u)); }, 1500);
+}
+
 function saoChep(id){ const e = $(id); e.select(); try { document.execCommand('copy'); bao('Đã sao chép'); } catch (x) {} }
 
 /* ---------- Nhận diện khuôn mặt (đăng ký mẫu) ---------- */
@@ -591,8 +910,11 @@ async function taiKQ(){
   $('kqSo').innerHTML = '<div><b>' + r.soMoi + '</b>Đại biểu được mời</div><div><b style="color:#15803d">' + r.thanhCong.length + '</b>Đã điểm danh (' + tl + '%)</div>' +
     '<div><b>' + r.chua.length + '</b>Chưa điểm danh</div><div><b style="color:#b91c1c">' + r.tuChoi.length + '</b>Lượt bị từ chối</div>';
   KQ = { ok: r.thanhCong, tc: r.tuChoi };
-  $('kqOK').innerHTML = r.thanhCong.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.gio) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + (x.tuDK && !x.xacNhan ? ' · <span style="color:#b45309">tự ĐK chờ xác nhận</span>' : '') + '</div></td><td>' + esc(x.donVi) + '</td><td>' + esc(x.kc) + '</td><td>' + esc(x.lech) + '</td><td>' + (MAT() ? '<button class="btn nho xam" onclick="xemAnhKQ(\'ok\',' + i + ')">Xem ảnh</button>' : '—') + '</td></tr>').join('') || '<tr><td colspan="7" class="nho">Chưa có ai.</td></tr>';
-  $('kqChua').innerHTML = r.chua.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.maDB) + '</td><td>' + esc(x.hoTen) + '</td><td>' + esc(x.chucVu) + '</td><td>' + esc(x.donVi) + '</td><td>' + (x.coMat ? 'Đã đăng ký' : '<span class="nho">Chưa (sẽ tự đăng ký)</span>') + '</td></tr>').join('') || '<tr><td colspan="6" class="nho">Tất cả đã điểm danh.</td></tr>';
+  $('kqOK').innerHTML = r.thanhCong.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.gio) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + (x.tuDK && !x.xacNhan ? ' · <span style="color:#b45309">tự ĐK chờ xác nhận</span>' : '') + '</div></td><td>' + esc(x.donVi) + (x.btc ? '<div class="nho"><span class="badge b-vang">BTC xác nhận</span> ' + esc(String(x.lyDo).replace(/^BTC xác nhận:\s*/, '')) + '</div>' : '') + '</td><td>' + esc(x.kc) + '</td><td>' + esc(x.lech) + '</td><td>' +
+    (x.btc ? '<button class="btn nho xam" onclick="huyXN(\'' + x.maDB + '\')">Hủy xác nhận</button>' : MAT() ? '<button class="btn nho xam" onclick="xemAnhKQ(\'ok\',' + i + ')">Xem ảnh</button>' : '—') + '</td></tr>').join('') || '<tr><td colspan="7" class="nho">Chưa có ai.</td></tr>';
+  KQ.chua = r.chua;
+  $('kqChua').innerHTML = r.chua.map((x, i) => '<tr><td><input type="checkbox" style="width:auto" value="' + esc(x.maDB) + '"></td><td>' + (i + 1) + '</td><td>' + esc(x.maDB) + '</td><td>' + esc(x.hoTen) + '</td><td>' + esc(x.chucVu) + '</td><td>' + esc(x.donVi) + '</td><td>' +
+    (x.coMat ? 'Đã đăng ký' : '<span class="nho">Chưa (sẽ tự đăng ký)</span>') + '</td><td><button class="btn nho" onclick="xnMot(\'' + x.maDB + '\')">✔ BTC xác nhận</button></td></tr>').join('') || '<tr><td colspan="8" class="nho">Tất cả đã điểm danh.</td></tr>';
    $('kqTC').innerHTML = r.tuChoi.map((x, i) => '<tr><td>' + esc(x.gio) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + '</div></td><td>' + esc(x.lyDo) + '</td><td>' + esc(x.kc) + '</td><td>' + esc(x.lech) + '</td><td>' + (MAT() ? '<button class="btn nho xam" onclick="xemAnhKQ(\'tc\',' + i + ')">Xem ảnh</button>' : '—') + '</td></tr>').join('') || '<tr><td colspan="6" class="nho">Không có.</td></tr>';
 }
 function tuLamMoi(){ clearInterval(hengio); if ($('kqTu').checked) hengio = setInterval(() => { if (!$('tKQ').hidden) taiKQ(); }, 15000); }
