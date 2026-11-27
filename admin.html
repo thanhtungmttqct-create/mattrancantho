@@ -145,7 +145,7 @@
         <input id="dbTim" placeholder="Tìm họ tên, đơn vị, mã…" style="max-width:260px" oninput="veDB()">
         <select id="dbLocNhom" style="max-width:180px" onchange="veDB()"></select>
         <select id="dbLocMat" style="max-width:180px" onchange="veDB()">
-          <option value="">Tất cả</option><option value="cho">Tự đăng ký – chờ xác nhận</option><option value="chuyen">Yêu cầu chuyển điện thoại</option><option value="co">Đã đăng ký</option><option value="chua">Chưa đăng ký</option>
+          <option value="">Tất cả</option><option value="cho" id="locCho">Tự đăng ký – chờ xác nhận</option><option value="chuyen">Yêu cầu chuyển điện thoại</option><option value="co">Đã đăng ký</option><option value="chua">Chưa đăng ký</option>
         </select>
         <span class="nho" id="dbDem"></span>
       </div>
@@ -424,7 +424,7 @@ function nhanDuLieu(d){
   $('cdDKHT').value = String(c.DANG_KY_TAI_HOI_TRUONG); $('cdTuHoc').value = String(c.TU_HOC_MAU);
   $('cdTruoc').value = String(c.DANG_KY_TRUOC); $('cdMaDK').value = c.MA_DANG_KY_TRUOC || '';
   $('cdPhuongThuc').value = String(c.DUNG_KHUON_MAT ? 1 : 0); $('cdMaKiosk').value = c.MA_KIOSK || '';
-  $('hangMatLoat').classList.toggle('an', !c.DUNG_KHUON_MAT); $('thDK').textContent = c.DUNG_KHUON_MAT ? 'Khuôn mặt' : 'Điện thoại';
+  $('hangMatLoat').classList.toggle('an', !c.DUNG_KHUON_MAT); $('locCho').hidden = !c.DUNG_KHUON_MAT; $('thDK').textContent = c.DUNG_KHUON_MAT ? 'Khuôn mặt' : 'Điện thoại';
   $('ttTruoc').innerHTML = c.DANG_KY_TRUOC ? 'Đang <b>mở</b> đăng ký trước' + (c.MA_DANG_KY_TRUOC ? ' · mã đăng ký: <b>' + esc(c.MA_DANG_KY_TRUOC) + '</b>' : ' · không cần mã') + ' (đổi ở tab Cài đặt).'
     : 'Đăng ký trước đang <b>tắt</b> (bật ở tab Cài đặt).';
   veSK(); veLocNhom(); veDB(); veChonSK(); if (!$('tCN').hidden) veChonCN();
@@ -508,14 +508,13 @@ function dbLoc(){
 }
 function veDB(){
   const ds = dbLoc();
-  const cho = D.daiBieu.filter(d => daDK(d) && laTuDK(d) && !d.xacNhan).length, chuyen = D.daiBieu.filter(d => d.yeuCau).length;
+  const cho = MAT() ? D.daiBieu.filter(d => daDK(d) && laTuDK(d) && !d.xacNhan).length : 0, chuyen = D.daiBieu.filter(d => d.yeuCau).length;
   $('dbDem').innerHTML = ds.length + '/' + D.daiBieu.length + ' đại biểu · ' + D.daiBieu.filter(daDK).length + (MAT() ? ' đã đăng ký mặt' : ' đã gắn điện thoại') +
     (cho ? ' · <b style="color:#b45309">' + cho + ' tự đăng ký chờ xác nhận</b>' : '') + (chuyen && !MAT() ? ' · <b style="color:#b91c1c">' + chuyen + ' yêu cầu chuyển điện thoại</b>' : '');
   $('dsDB').innerHTML = ds.map(d => '<tr><td>' + esc(d.maDB) + '</td><td><b>' + esc(d.hoTen) + '</b><div class="nho">' + esc(d.chucVu) + (d.donVi ? ' — ' + esc(d.donVi) : '') + (d.sdt ? ' · ☎ ' + esc(d.sdt) : '') + '</div></td>' +
     '<td>' + esc(d.nhom) + '</td><td>' + (MAT() ? veTrangThaiMat(d) : veTrangThaiMay(d)) + '</td>' +
     '<td>' + (!MAT() && d.yeuCau ? '<button class="btn nho" onclick="duyetChuyen(\'' + d.maDB + '\', true)">Duyệt chuyển máy</button> <button class="btn nho xam" onclick="duyetChuyen(\'' + d.maDB + '\', false)">Từ chối</button> ' : '') +
-    (daDK(d) && laTuDK(d) && !d.xacNhan ? (MAT() ? '<button class="btn nho" onclick="xemAnhDB(\'' + d.maDB + '\')">Kiểm tra &amp; xác nhận</button> '
-                                            : '<button class="btn nho" onclick="xacNhanDK(\'' + d.maDB + '\')">Xác nhận</button> ') : '') +
+    (MAT() && daDK(d) && laTuDK(d) && !d.xacNhan ? '<button class="btn nho" onclick="xemAnhDB(\'' + d.maDB + '\')">Kiểm tra &amp; xác nhận</button> ' : '') +
     (MAT() ? '<button class="btn nho phu" onclick="moDangKy(\'' + d.maDB + '\')">Đăng ký mặt</button> ' : '') +
     '<button class="btn nho xam" onclick="menuDB(\'' + d.maDB + '\')">Khác…</button></td></tr>').join('');
 }
@@ -527,7 +526,7 @@ function veTrangThaiMay(d){
   const yc = d.yeuCau ? '<div class="nho" style="color:#b91c1c">⚠ Yêu cầu chuyển sang máy mới (' + esc(d.yeuCau.may) + ', ' + esc(d.yeuCau.luc) + ')</div>' : '';
   if (!d.ganMay) return '<span class="badge b-do">Chưa</span>' + yc;
   const tu = laTuDK(d), ten = d.nguon === 'Tự đăng ký trước' ? 'ĐK trước' : 'Tự ĐK';
-  return '<span class="badge ' + (tu && !d.xacNhan ? 'b-vang' : 'b-xanh') + '">📱 ' + (tu ? ten + (d.xacNhan ? ' · đã xác nhận' : ' · chờ xác nhận') : 'Đã gắn') + '</span>' +
+  return '<span class="badge b-xanh">📱 ' + (tu ? ten : 'Đã gắn') + '</span>' +
     '<div class="nho">' + esc(d.mayGan) + ' · ' + esc(d.ngayGan) + '</div>' + yc;
 }
 async function duyetChuyen(ma, dongY){
@@ -910,7 +909,7 @@ async function taiKQ(){
   $('kqSo').innerHTML = '<div><b>' + r.soMoi + '</b>Đại biểu được mời</div><div><b style="color:#15803d">' + r.thanhCong.length + '</b>Đã điểm danh (' + tl + '%)</div>' +
     '<div><b>' + r.chua.length + '</b>Chưa điểm danh</div><div><b style="color:#b91c1c">' + r.tuChoi.length + '</b>Lượt bị từ chối</div>';
   KQ = { ok: r.thanhCong, tc: r.tuChoi };
-  $('kqOK').innerHTML = r.thanhCong.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.gio) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + (x.tuDK && !x.xacNhan ? ' · <span style="color:#b45309">tự ĐK chờ xác nhận</span>' : '') + '</div></td><td>' + esc(x.donVi) + (x.btc ? '<div class="nho"><span class="badge b-vang">BTC xác nhận</span> ' + esc(String(x.lyDo).replace(/^BTC xác nhận:\s*/, '')) + '</div>' : '') + '</td><td>' + esc(x.kc) + '</td><td>' + esc(x.lech) + '</td><td>' +
+  $('kqOK').innerHTML = r.thanhCong.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.gio) + '</td><td><b>' + esc(x.hoTen) + '</b><div class="nho">' + esc(x.maDB) + (MAT() && x.tuDK && !x.xacNhan ? ' · <span style="color:#b45309">tự ĐK chờ xác nhận</span>' : '') + '</div></td><td>' + esc(x.donVi) + (x.btc ? '<div class="nho"><span class="badge b-vang">BTC xác nhận</span> ' + esc(String(x.lyDo).replace(/^BTC xác nhận:\s*/, '')) + '</div>' : '') + '</td><td>' + esc(x.kc) + '</td><td>' + esc(x.lech) + '</td><td>' +
     (x.btc ? '<button class="btn nho xam" onclick="huyXN(\'' + x.maDB + '\')">Hủy xác nhận</button>' : MAT() ? '<button class="btn nho xam" onclick="xemAnhKQ(\'ok\',' + i + ')">Xem ảnh</button>' : '—') + '</td></tr>').join('') || '<tr><td colspan="7" class="nho">Chưa có ai.</td></tr>';
   KQ.chua = r.chua;
   $('kqChua').innerHTML = r.chua.map((x, i) => '<tr><td><input type="checkbox" style="width:auto" value="' + esc(x.maDB) + '"></td><td>' + (i + 1) + '</td><td>' + esc(x.maDB) + '</td><td>' + esc(x.hoTen) + '</td><td>' + esc(x.chucVu) + '</td><td>' + esc(x.donVi) + '</td><td>' +
