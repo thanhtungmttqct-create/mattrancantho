@@ -142,6 +142,17 @@
       <div class="hang"><button class="btn" onclick="themDB()">Thêm vào danh sách</button></div>
     </div>
     <div class="the">
+      <h2>📥 Lấy đại biểu đăng ký mới từ Google Sheet</h2>
+      <div class="nho">Đọc trang <b>câu trả lời biểu mẫu</b> của Google Sheet đăng ký, so với danh sách hiện có (theo số điện thoại, họ tên + đơn vị) và chỉ liệt kê <b>người chưa có</b>.
+        Người vượt chỉ tiêu, trùng đăng ký, trùng SĐT hoặc trùng tên ở đơn vị khác được tách riêng để Ban Tổ chức xem xét. Chưa ghi gì cho đến khi bấm <b>Nạp</b>.</div>
+      <div class="luoi">
+        <div style="grid-column:1/-1"><label>Đường dẫn Google Sheet đăng ký</label><input id="nguonUrl"></div>
+        <div><label>Nhóm gán cho người được nạp</label><input id="nguonNhom" placeholder="VD: HN27112026"></div>
+      </div>
+      <div class="hang"><button class="btn" onclick="docNguonDK()">🔍 Kiểm tra đăng ký mới</button><span class="nho" id="nguonTT"></span></div>
+      <div id="nguonKQ"></div>
+    </div>
+    <div class="the">
       <div class="hang" style="margin-top:0">
         <input id="dbTim" placeholder="Tìm họ tên, đơn vị, mã…" style="max-width:260px" oninput="veDB()">
         <select id="dbLocNhom" style="max-width:180px" onchange="veDB()"></select>
@@ -444,6 +455,7 @@ function moTab(id){
   document.querySelectorAll('.tab').forEach(t => t.hidden = t.id !== id);
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
   if (id === 'tKQ') taiKQ();
+  if (id === 'tDB') khoiTaoNguon();
   if (id === 'tDH'){ veChonDH(); taiDH(); }
   if (id === 'tCN'){ veChonCN(); if ($('cnMa').value) taiDsCN(); }
 }
@@ -596,6 +608,64 @@ async function doiTTSK(ma){ const s = Object.assign({}, timSK(ma)); s.trangThai 
 async function xoaSK(ma){ if (!confirm('Xóa hội nghị ' + ma + '? (Dữ liệu điểm danh đã ghi vẫn giữ trong Sheet)')) return;
   try { nhanDuLieu(await goi('adminXoaSuKien', ma)); } catch (e) { loi(e); } }
 function xemKQ(ma){ $('kqSK').value = ma; moTab('tKQ'); }
+
+/* ---------- Lấy đại biểu đăng ký mới từ Google Sheet ---------- */
+const NGUON_MD = 'https://docs.google.com/spreadsheets/d/1LxEIfOZVVU07PwqohKwZPBlV5xlSzatxAyLg7leyBkY/edit';
+let NGUON = null;
+function khoiTaoNguon(){
+  if ($('nguonUrl').value) return;
+  let u = ''; try { u = localStorage.getItem('nguonDK') || ''; } catch (e) {}
+  $('nguonUrl').value = u || NGUON_MD;
+  const dem = {}; D.daiBieu.forEach(d => String(d.nhom || '').split(/[,;]/).map(x => x.trim()).filter(Boolean).forEach(n => dem[n] = (dem[n] || 0) + 1));
+  $('nguonNhom').value = Object.keys(dem).sort((a, b) => dem[b] - dem[a])[0] || '';
+}
+async function docNguonDK(){
+  const u = $('nguonUrl').value.trim(); if (!u) return bao('Dán đường dẫn Google Sheet đăng ký.');
+  try { localStorage.setItem('nguonDK', u); } catch (e) {}
+  $('nguonTT').textContent = 'Đang đọc Google Sheet…'; $('nguonKQ').innerHTML = '';
+  try { NGUON = await goi('adminDocDangKyMoi', u); } catch (e) { $('nguonTT').textContent = ''; return loi(e); }
+  veNguonDK();
+}
+function veNguonDK(){
+  const r = NGUON;
+  $('nguonTT').innerHTML = 'Trang <b>' + esc(r.tenTrang) + '</b>: ' + r.soDong + ' lượt gửi, ' + r.soNguoi + ' người · đã có trong hệ thống: <b>' + r.daCo +
+    '</b>' + (r.daBoQua ? ' · đã bỏ qua: ' + r.daBoQua : '') + ' · <b style="color:#15803d">mới: ' + r.moi.length + '</b> · <b style="color:#b45309">cần xem xét: ' + r.canXem.length + '</b> · lúc ' + esc(r.capNhat);
+  const bang = (ds, loai, chon) => '<table><thead><tr><th><input type="checkbox" style="width:auto"' + (chon ? ' checked' : '') +
+    ' onchange="document.querySelectorAll(\'#nguonKQ input[data-loai=' + loai + ']\').forEach(x => x.checked = this.checked); demNguon()"></th>' +
+    '<th>Họ tên</th><th>Chức vụ</th><th>Đơn vị</th><th>SĐT</th><th>Đăng ký lúc</th>' + (loai === 'x' ? '<th>Cần xem xét</th>' : '<th>Trạng thái / ghi chú</th>') + '</tr></thead><tbody>' +
+    ds.map((x, i) => '<tr><td><input type="checkbox" style="width:auto" data-loai="' + loai + '" data-i="' + i + '"' + (chon ? ' checked' : '') + ' onchange="demNguon()"></td>' +
+      '<td><b>' + esc(x.hoTen) + '</b></td><td>' + esc(x.chucVu) + '</td><td>' + esc(x.donVi) + '</td><td>' + esc(x.sdt) + '</td><td class="nho">' + esc(x.luc) + '</td>' +
+      '<td class="nho"' + (loai === 'x' ? ' style="color:#b45309"' : '') + '>' + esc(loai === 'x' ? x.lyDo : [x.trangThai || 'chưa có trạng thái', x.ghiChu].filter(Boolean).join(' · ')) + '</td></tr>').join('') + '</tbody></table>';
+  $('nguonKQ').innerHTML =
+    (r.moi.length ? '<h2 style="margin-top:14px;color:#15803d">Mới – chưa có trong hệ thống (' + r.moi.length + ')</h2><div class="cuon" style="max-height:380px">' + bang(r.moi, 'm', true) + '</div>'
+      : '<div class="nho" style="margin-top:12px">✔ Không có người đăng ký mới.</div>') +
+    (r.canXem.length ? '<h2 style="margin-top:14px;color:#b45309">Cần xem xét (' + r.canXem.length + ') — chỉ đánh dấu khi Ban Tổ chức đồng ý nạp</h2><div class="cuon" style="max-height:320px">' + bang(r.canXem, 'x', false) + '</div>' : '') +
+    (r.moi.length || r.canXem.length ? '<div class="hang"><button class="btn" id="btnNapNguon" onclick="napNguonDK()">➕ Nạp</button>' +
+      '<button class="btn xam" id="btnBoQuaNguon" onclick="boQuaNguonDK()">🚫 Bỏ qua người đã chọn</button>' +
+      '<span class="nho">Nạp: người được nạp tự đăng ký điện thoại và điểm danh như các đại biểu khác. Bỏ qua: không nạp và không hiện lại ở lần kiểm tra sau.</span></div>' : '');
+  demNguon();
+}
+function chonNguon(){ return [...document.querySelectorAll('#nguonKQ input[data-i]:checked')].map(x => (x.dataset.loai === 'm' ? NGUON.moi : NGUON.canXem)[+x.dataset.i]); }
+function demNguon(){ const b = $('btnNapNguon'); if (b){ const n = chonNguon().length; b.textContent = '➕ Nạp ' + n + ' người đã chọn'; b.disabled = !n; $('btnBoQuaNguon').disabled = !n; } }
+async function boQuaNguonDK(){
+  const ds = chonNguon(); if (!ds.length) return;
+  const lyDo = prompt('BỎ QUA ' + ds.length + ' lượt đăng ký (không nạp, không hiện lại):\n' + ds.slice(0, 10).map(x => '• ' + x.hoTen + ' – ' + x.donVi).join('\n') +
+    (ds.length > 10 ? '\n…' : '') + '\n\nGhi lý do:', 'Ban Tổ chức không nạp (vượt chỉ tiêu / đã thay người / trùng)');
+  if (lyDo === null) return;
+  try { const r = await goi('adminBoQuaDangKy', ds.map(x => ({ khoa: x.khoa, hoTen: x.hoTen, donVi: x.donVi, sdt: x.sdt, lyDo }))); bao('Đã bỏ qua ' + r.daBoQua + ' lượt'); await docNguonDK(); }
+  catch (e) { loi(e); }
+}
+async function napNguonDK(){
+  const ds = chonNguon(); if (!ds.length) return;
+  const nhom = $('nguonNhom').value.trim();
+  if (!confirm('Nạp ' + ds.length + ' đại biểu vào danh sách' + (nhom ? ' (nhóm ' + nhom + ')' : '') + '?')) return;
+  $('btnNapNguon').disabled = true;
+  try {
+    nhanDuLieu(await goi('adminThemDaiBieu', ds.map(x => ({ hoTen: x.hoTen, chucVu: x.chucVu, donVi: x.donVi, nhom, sdt: x.sdt }))));
+    bao('✔ Đã nạp ' + ds.length + ' đại biểu', 5000);
+    await docNguonDK();
+  } catch (e) { loi(e); demNguon(); }
+}
 
 /* ---------- Đại biểu ---------- */
 async function themDB(){
