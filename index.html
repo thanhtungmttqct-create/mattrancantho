@@ -57,6 +57,20 @@
   .cam-ket input{width:20px;height:20px;flex:none;margin-top:1px}
   .anh-nho{width:72px;height:96px;object-fit:cover;border-radius:10px;flex:none}
   footer{text-align:center;font-size:12px;color:var(--nhat);padding:10px 0 24px}
+  .gcn-the{border-left:4px solid var(--xanh);background:#f0fdf4;padding:10px 12px;border-radius:8px;margin-top:10px;font-size:14px;line-height:1.5}
+  .gcn-the.cho{border-color:var(--vang);background:#fffbeb}.gcn-the.thieu{border-color:#9ca3af;background:#f9fafb}
+  #inGCN{display:none}
+  #hopViTri{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:12px}
+  #hopViTri .hop{background:#fff;border-radius:16px;max-width:520px;width:100%;padding:18px 16px 14px;max-height:88vh;overflow:auto;animation:len .2s ease-out}
+  @keyframes len{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+  #hopViTri h2{margin:0 0 6px;font-size:19px}
+  #hopViTri ol{margin:8px 0 4px;padding-left:22px;line-height:1.55;font-size:15px}
+  #hopViTri .bieu-tuong{font-size:44px;text-align:center;line-height:1}
+  @media print{
+    @page{size:A4 landscape;margin:0}
+    body > *:not(#inGCN){display:none!important}
+    #inGCN{display:block!important} #inGCN img{width:100%;display:block}
+  }
 </style>
 </head>
 <body>
@@ -191,6 +205,13 @@
     <div class="the" style="text-align:center"><div class="xoay"></div><div id="choTxt">Đang xử lý…</div></div>
   </section>
 
+  <!-- 6. Giấy chứng nhận -->
+  <section id="scrGCN" class="scr" hidden>
+    <div class="the" id="gcnTT"></div>
+    <div class="the" style="padding:6px"><canvas id="gcnCanvas" style="width:100%;display:block;border-radius:6px"></canvas></div>
+    <div id="gcnNut"></div>
+  </section>
+
   <!-- 5. Kết quả -->
   <section id="scrKQ" class="scr" hidden>
     <div class="the kq" id="kq"></div>
@@ -204,6 +225,96 @@
   <footer id="chanTrang">Mỗi lần điểm danh đều được chụp ảnh, ghi vị trí và thời gian để đối chiếu.</footer>
 </main>
 
+<script>
+/* GCN-BAT-DAU */
+/* ===== Vẽ Giấy chứng nhận (A4 ngang) lên canvas — dùng chung cho index.html và admin.html ===== */
+const GCN_W = 2000, GCN_H = 1414;
+const GCN_FONT = '"Times New Roman", "Noto Serif", "Liberation Serif", "DejaVu Serif", serif';
+function gcnNapAnh(src){ return new Promise(ok => { if (!src) return ok(null); const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; }); }
+function gcnNapQRLib(){
+  return new Promise(ok => {
+    if (typeof qrcode !== 'undefined') return ok(true);
+    const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+    sc.onload = () => ok(true); sc.onerror = () => ok(false); document.head.appendChild(sc);
+  });
+}
+function gcnNgat(ctx, text, maxW){
+  const words = String(text || '').split(/\s+/).filter(Boolean), out = []; let dong = '';
+  words.forEach(w => { const thu = dong ? dong + ' ' + w : w; if (ctx.measureText(thu).width > maxW && dong){ out.push(dong); dong = w; } else dong = thu; });
+  if (dong) out.push(dong);
+  return out;
+}
+function gcnChu(ctx, text, x, y, size, opt){
+  opt = opt || {};
+  ctx.font = (opt.italic ? 'italic ' : '') + (opt.bold ? 'bold ' : '') + size + 'px ' + GCN_FONT;
+  ctx.fillStyle = opt.mau || '#1f2937'; ctx.textAlign = opt.canh || 'center'; ctx.textBaseline = 'alphabetic';
+  const lines = String(text || '').split(/\n/).reduce((a, d) => a.concat(opt.maxW ? gcnNgat(ctx, d, opt.maxW) : [d]), []);
+  // co chữ nếu quá số dòng cho phép
+  if (opt.maxW && opt.toiDa && lines.length > opt.toiDa && size > 20) return gcnChu(ctx, text, x, y, size - 2, opt);
+  lines.forEach((l, i) => ctx.fillText(l, x, y + i * size * (opt.gian || 1.3)));
+  return y + (lines.length - 1) * size * (opt.gian || 1.3);
+}
+/** d: dữ liệu giấy (máy chủ trả về). opt: { chuKy: dataURL, url: đường dẫn tra cứu, mau: true = bản mẫu } */
+async function veGiayCN(canvas, d, opt){
+  opt = opt || {};
+  canvas.width = GCN_W; canvas.height = GCN_H;
+  const c = canvas.getContext('2d'), DO = '#b3121f', VANG = '#c9a227', W = GCN_W, H = GCN_H;
+  c.fillStyle = '#fffdf6'; c.fillRect(0, 0, W, H);
+  // khung viền
+  c.strokeStyle = DO; c.lineWidth = 16; c.strokeRect(46, 46, W - 92, H - 92);
+  c.strokeStyle = VANG; c.lineWidth = 4; c.strokeRect(74, 74, W - 148, H - 148);
+  c.lineWidth = 2; c.strokeRect(86, 86, W - 172, H - 172);
+  [[86, 86], [W - 86, 86], [86, H - 86], [W - 86, H - 86]].forEach(([x, y]) => {
+    c.save(); c.translate(x, y); c.rotate(Math.PI / 4); c.fillStyle = DO; c.fillRect(-14, -14, 28, 28);
+    c.fillStyle = VANG; c.fillRect(-7, -7, 14, 14); c.restore();
+  });
+
+  // Quốc hiệu (phải) + cơ quan (trái)
+  const xT = 520, xP = 1440;
+  const cq = String(d.coQuan || '').split(/\n/).filter(Boolean);
+  cq.forEach((l, i) => gcnChu(c, l.toUpperCase(), xT, 170 + i * 42, 30, { bold: i === cq.length - 1 }));
+  const yCq = 170 + (cq.length - 1) * 42;
+  c.strokeStyle = '#1f2937'; c.lineWidth = 2; c.beginPath(); c.moveTo(xT - 90, yCq + 16); c.lineTo(xT + 90, yCq + 16); c.stroke();
+  gcnChu(c, 'Số: ' + (d.so || '…/' + 'GCN'), xT, yCq + 62, 28);
+  gcnChu(c, 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', xP, 170, 30, { bold: true });
+  gcnChu(c, 'Độc lập - Tự do - Hạnh phúc', xP, 214, 32, { bold: true });
+  c.beginPath(); c.moveTo(xP - 190, 230); c.lineTo(xP + 190, 230); c.stroke();
+
+  // Tiêu đề + nội dung
+  let y = 470;
+  gcnChu(c, 'GIẤY CHỨNG NHẬN', W / 2, y, 104, { bold: true, mau: DO });
+  y = d.loiChungNhan ? gcnChu(c, d.loiChungNhan, W / 2, y + 84, 36, { italic: true, maxW: 1500, toiDa: 2 }) + 90 : y + 115;
+  gcnChu(c, 'Đồng chí:', 470, y, 38, { canh: 'left', italic: true });
+  gcnChu(c, String(d.hoTen || '').toUpperCase(), W / 2 + 60, y + 2, 58, { bold: true, mau: '#7a0c16' });
+  const cv = [d.chucVu, d.donVi].filter(Boolean).join(' – ');
+  if (!cv) y -= 30;
+  if (cv) y = gcnChu(c, cv, W / 2, y + 66, 34, { maxW: 1460, toiDa: 2, gian: 1.25 });
+  y = gcnChu(c, 'Đã tham dự đầy đủ và hoàn thành chương trình', W / 2, y + 74, 36, { italic: true });
+  y = gcnChu(c, d.tenLop, W / 2, y + 66, 44, { bold: true, maxW: 1640, toiDa: 3, gian: 1.25, mau: '#111827' });
+  if (d.thoiGianDiaDiem) y = gcnChu(c, d.thoiGianDiaDiem, W / 2, y + 58, 32, { italic: true, maxW: 1460, toiDa: 2 });
+
+  // Ký tên (phải)
+  const yK = Math.min(Math.max(y + 80, 970), H - 124 - 330);
+  gcnChu(c, d.diaDanhNgay, xP, yK, 32, { italic: true });
+  if (d.thayMat) gcnChu(c, String(d.thayMat).toUpperCase(), xP, yK + 48, 32, { bold: true });
+  gcnChu(c, String(d.chucVuKy || '').toUpperCase(), xP, yK + 90, 32, { bold: true });
+  const ck = await gcnNapAnh(opt.chuKy);
+  if (ck){ const h = Math.min(250, 620 * ck.height / ck.width), w = ck.width * h / ck.height; c.drawImage(ck, xP - w / 2, yK + 70 + (250 - h) / 2, w, h); }
+  gcnChu(c, d.nguoiKy, xP, yK + 340, 38, { bold: true });
+
+  // Mã QR tra cứu (trái dưới)
+  if (opt.url && await gcnNapQRLib() && typeof qrcode !== 'undefined'){
+    const q = qrcode(0, 'M'); q.addData(opt.url); q.make();
+    const img = await gcnNapAnh(q.createDataURL(6, 1));
+    if (img){ c.drawImage(img, 170, H - 400, 210, 210); }
+    gcnChu(c, 'Quét mã để tra cứu', 275, H - 160, 22, { mau: '#4b5563' });
+    gcnChu(c, 'Mã: ' + (d.ma || ''), 275, H - 130, 22, { mau: '#4b5563' });
+  }
+  if (opt.mau){ c.save(); c.translate(W / 2, H / 2); c.rotate(-0.35); gcnChu(c, 'BẢN MẪU', 0, 60, 220, { bold: true, mau: 'rgba(200,16,46,.16)' }); c.restore(); }
+  return canvas;
+}
+/* GCN-KET-THUC */
+</script>
 <script>
 /* ======= DÁN ĐƯỜNG DẪN WEB APP APPS SCRIPT (kết thúc bằng /exec) VÀO ĐÂY ======= */
 const API_URL = 'https://script.google.com/macros/s/AKfycbweVW70kfGNx-RMSTIbqViS0CLwLarf-SiCWVTFj6se5O5u4nl9n9sPAJhhX8Gm1wlZNA/exec';
@@ -297,23 +408,64 @@ function taiMoHinh(){
 }
 
 /* ---------- Định vị ---------- */
+let maLoiViTri = 0, canViTri = false;
 function batDinhVi(){
+  canViTri = true;
   if (!navigator.geolocation){ viTriLoi = 'Thiết bị không hỗ trợ định vị.'; chip('chipGPS','Vị trí: không hỗ trợ','loi'); return; }
   if (watchId !== null) return;
   viTriLoi = null;
   watchId = navigator.geolocation.watchPosition(p => {
     const c = p.coords, moi = { lat: c.latitude, lng: c.longitude, acc: c.accuracy, t: Date.now() };
     if (!viTri || moi.acc <= viTri.acc * 1.5 || Date.now() - viTri.t > 15000) viTri = moi;
-    viTriLoi = null;
+    viTriLoi = null; maLoiViTri = 0; anHuongDanViTri();
     chip('chipGPS', 'Vị trí: sai số ±' + Math.round(viTri.acc) + ' m', viTri.acc <= 100 ? 'ok' : '');
   }, e => {
+    maLoiViTri = e.code;
     viTriLoi = e.code === 1
-      ? 'Bạn chưa cho phép truy cập vị trí. Hãy bật Định vị trên điện thoại, cấp quyền vị trí cho trình duyệt rồi tải lại trang.'
+      ? 'Bạn chưa cho phép truy cập vị trí. Hãy bật Định vị trên điện thoại, cấp quyền vị trí cho trình duyệt rồi thử lại.'
       : 'Chưa lấy được vị trí (' + e.message + ').';
-    chip('chipGPS', e.code === 1 ? 'Vị trí: chưa cấp quyền' : 'Vị trí: đang thử lại…', 'loi');
-    if (e.code === 1){ navigator.geolocation.clearWatch(watchId); watchId = null; }
+    chip('chipGPS', e.code === 1 ? 'Vị trí: chưa cấp quyền' : e.code === 2 ? 'Vị trí: định vị đang tắt' : 'Vị trí: đang thử lại…', 'loi');
+    if (e.code === 1 || e.code === 2){ navigator.geolocation.clearWatch(watchId); watchId = null; hienHuongDanViTri(e.code); }
   }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
 }
+
+/* ---------- Tự hiện hướng dẫn bật định vị khi điện thoại chưa mở vị trí ---------- */
+const LA_IPHONE = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function hienHuongDanViTri(ma){
+  if (TRONG_APP) return;          // trong Zalo/Facebook đã có cảnh báo mở bằng trình duyệt
+  const tat = ma === 2;           // 2 = máy tắt định vị / không có tín hiệu; 1 = chặn quyền
+  const buoc = LA_IPHONE
+    ? '<ol><li>Mở <b>Cài đặt</b> › <b>Quyền riêng tư &amp; Bảo mật</b> › <b>Dịch vụ định vị</b> → <b>bật</b>.</li>' +
+      '<li>Trong cùng mục đó, kéo xuống chọn <b>Safari Websites</b> (hoặc <b>Chrome</b>) → chọn <b>Khi dùng ứng dụng</b> / <b>Hỏi</b>.</li>' +
+      '<li>Quay lại trang này, bấm <b>Thử lại</b> rồi bấm <b>Cho phép</b>.</li></ol>'
+    : '<ol><li>Vuốt từ trên màn hình xuống, bấm biểu tượng <b>Vị trí</b> (📍) để <b>bật</b>.</li>' +
+      '<li>' + (tat ? 'Nếu Chrome hỏi <b>“Bật vị trí thiết bị?”</b> → bấm <b>OK</b>.' :
+        'Bấm biểu tượng <b>ổ khóa / ⓘ</b> cạnh địa chỉ trang › <b>Quyền</b> › <b>Vị trí</b> → <b>Cho phép</b>.') + '</li>' +
+      '<li>Bấm <b>Thử lại</b> bên dưới.</li></ol>';
+  $('hopViTriND').innerHTML = '<div class="bieu-tuong">📍</div><h2 style="text-align:center">' + (tat ? 'Điện thoại đang tắt định vị' : 'Chưa cho phép truy cập vị trí') + '</h2>' +
+    '<div class="goi-y" style="text-align:center">Cần bật định vị để xác nhận bạn đang có mặt tại hội trường.</div>' + buoc +
+    '<button class="btn btn-chinh" onclick="thuLaiViTri()">📍 Thử lại – bật định vị</button>' +
+    '<button class="btn btn-phu" onclick="anHuongDanViTri(true)">Để sau</button>';
+  $('hopViTri').hidden = false;
+}
+function anHuongDanViTri(){ $('hopViTri').hidden = true; }
+function thuLaiViTri(){
+  if (watchId !== null){ navigator.geolocation.clearWatch(watchId); watchId = null; }
+  $('hopViTriND').innerHTML = '<div class="bieu-tuong">📍</div><h2 style="text-align:center">Đang xin quyền vị trí…</h2>' +
+    '<div class="goi-y" style="text-align:center">Nếu trình duyệt hỏi, hãy bấm <b>Cho phép</b>.</div><div class="xoay"></div>';
+  // gọi trực tiếp trong lúc người dùng bấm nút để trình duyệt hiện hộp xin quyền / hộp bật vị trí thiết bị
+  navigator.geolocation.getCurrentPosition(() => {}, () => {}, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  batDinhVi();
+}
+// Theo dõi khi người dùng bật lại quyền trong cài đặt rồi quay về trang
+try {
+  navigator.permissions && navigator.permissions.query({ name: 'geolocation' }).then(st => {
+    st.onchange = () => { if (st.state === 'granted' && canViTri){ anHuongDanViTri(); if (watchId === null) batDinhVi(); } };
+  }).catch(() => {});
+} catch (e) {}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && canViTri && maLoiViTri && watchId === null) thuLaiViTri();
+});
 function choViTri(ms){
   return new Promise(xong => {
     const t0 = Date.now();
@@ -596,7 +748,16 @@ async function veChaoMay(vaoDangKyTruoc){
       (t.chucVu ? '<div class="cv">' + esc(t.chucVu) + '</div>' : '') + '<div class="goi-y">' + esc(t.donVi || '') + '</div>' +
       t.suKien.map(s => s.daDiemDanh ? '<div class="sk"><b>' + esc(s.ten) + '</b><span style="color:#15803d;font-weight:600">✔ Đã điểm danh lúc ' + esc(s.daDiemDanh) + '</span></div>' : '').join('');
     const conLai = t.suKien.some(s => !s.daDiemDanh);
-    nut = '<button class="btn btn-chinh btn-lon" onclick="diemDanhBangMay()"' + (conLai ? '' : ' disabled') + '>✅ ĐIỂM DANH</button>' +
+    GCN_DS = t.gcn || [];
+    nd += GCN_DS.map((x, i) => x.trangThai === 'co'
+        ? '<div class="gcn-the"><b>📜 Giấy chứng nhận – ' + esc(x.tenLop) + '</b><br>Số ' + esc(x.gcn.so) + ' · Bạn đã hoàn thành đủ các buổi.</div>'
+        : x.trangThai === 'cho'
+        ? '<div class="gcn-the cho"><b>📜 Giấy chứng nhận – ' + esc(x.tenLop) + '</b><br>Cấp từ <b>' + esc(x.moLuc) + '</b> cho học viên điểm danh đủ các buổi:<br>' +
+          x.buoi.map(b => (b.da ? '✔ ' : '◻ ') + esc(b.ten)).join('<br>') + '</div>'
+        : '<div class="gcn-the thieu"><b>📜 Giấy chứng nhận – ' + esc(x.tenLop) + '</b><br>Chưa đủ điều kiện: thiếu ' +
+          x.buoi.filter(b => !b.da).map(b => esc(b.ten)).join(', ') + '. Nếu có sai sót, vui lòng liên hệ Ban Tổ chức.</div>').join('');
+    nut = GCN_DS.map((x, i) => x.trangThai === 'co' ? '<button class="btn btn-chinh btn-lon" onclick="xemGCN(' + i + ')">📜 XEM GIẤY CHỨNG NHẬN</button>' : '').join('') +
+      (conLai || !GCN_DS.some(x => x.trangThai === 'co') ? '<button class="btn btn-chinh btn-lon" onclick="diemDanhBangMay()"' + (conLai ? '' : ' disabled') + '>✅ ĐIỂM DANH</button>' : '') +
       (!t.suKien.length && coSK ? '<div class="goi-y" style="text-align:center;margin-top:6px">Bạn không thuộc danh sách hội nghị đang mở.</div>' : '') +
       '<button class="btn btn-phu" onclick="moHoSo(hoSo)">✏️ Cập nhật chức vụ / số điện thoại</button>';
   } else if (r.choChuyen){
@@ -614,6 +775,9 @@ async function veChaoMay(vaoDangKyTruoc){
   }
   $('mayND').innerHTML = nd; $('mayNut').innerHTML = nut;
   hien('scrMay');
+  // Quét lại mã sau giờ mở nhận: hiện ngay giấy chứng nhận (một lần mỗi lượt mở trang)
+  const iCo = GCN_DS.findIndex(x => x.trangThai === 'co');
+  if (r.toi && iCo >= 0 && !daTuMoGCN && !r.toi.suKien.some(s => !s.daDiemDanh)){ daTuMoGCN = true; return xemGCN(iCo); }
   if (vaoDangKyTruoc === true && !r.toi && !r.choChuyen){
     if (r.dangKyTruoc) moDangKyTruoc(); else alert('Ban Tổ chức chưa mở đăng ký trước. Vui lòng đăng ký khi đến hội trường.');
   }
@@ -623,6 +787,7 @@ async function diemDanhBangMay(){
   batDinhVi();
   cho('Đang xác định vị trí của bạn…');
   const vt = await choViTri(15000);
+  if (!vt && maLoiViTri){ veChaoMay(); return hienHuongDanViTri(maLoiViTri); }
   mau = { vt };
   cho('Đang điểm danh…');
   let r;
@@ -636,7 +801,8 @@ let chuyenMa = '';
 async function guiDangKyMay(x){
   if (!x || !confirm('Gắn điện thoại này với:\n\n' + x.hoTen + '\n' + x.donVi + '\n\nMỗi điện thoại chỉ đăng ký cho một người.')) return;
   const truoc = cheDo === 'truoc';
-  if (!truoc){ batDinhVi(); cho('Đang xác định vị trí của bạn…'); mau = { vt: await choViTri(15000) }; }
+  if (!truoc){ batDinhVi(); cho('Đang xác định vị trí của bạn…'); mau = { vt: await choViTri(15000) };
+    if (!mau.vt && maLoiViTri){ hien('scrDK'); return hienHuongDanViTri(maLoiViTri); } }
   cho('Đang đăng ký…');
   let r;
   try { r = await goi('dangKyMay', Object.assign(goiViTri(), { maDB: x.maDB, thietBi: MA_MAY, truoc, ma: maDK,
@@ -708,8 +874,63 @@ async function kioskChon(ma){
   hienKetQua(r);
 }
 
+/* ---------- Giấy chứng nhận ---------- */
+let GCN_DS = [], gcnHienTai = null, daTuMoGCN = false;
+const MA_GCN = (new URLSearchParams(location.search).get('gcn') || '').trim();
+function urlTraCuu(ma){ return location.origin + location.pathname + '?gcn=' + encodeURIComponent(ma); }
+async function veGCN(d, ttHtml, nutVe){
+  gcnHienTai = d;
+  $('gcnTT').innerHTML = ttHtml; $('gcnNut').innerHTML = ''; hien('scrGCN');
+  let chuKy = '';
+  if (d.coChuKy){ try { chuKy = await goi('layChuKyGCN', d.ma); } catch (e) {} }
+  await veGiayCN($('gcnCanvas'), d, { chuKy, url: urlTraCuu(d.ma) });
+  const coChiaSe = !!(navigator.canShare && window.File);
+  $('gcnNut').innerHTML = '<button class="btn btn-chinh" onclick="taiGCN()">⬇ Tải ảnh giấy chứng nhận về máy</button>' +
+    (coChiaSe ? '<button class="btn btn-phu" onclick="chiaSeGCN()">📤 Gửi qua Zalo / chia sẻ</button>' : '') +
+    '<button class="btn btn-phu" onclick="inGCN()">🖨 In / Lưu PDF</button>' + (nutVe || '');
+}
+function xemGCN(i){
+  const x = GCN_DS[i]; if (!x || !x.gcn) return;
+  veGCN(x.gcn, '<div style="color:#15803d;font-weight:700;font-size:18px">🎉 Chúc mừng đồng chí ' + esc(x.gcn.hoTen) + '!</div>' +
+    '<div class="goi-y">Đồng chí đã tham dự đầy đủ các buổi và được cấp Giấy chứng nhận số <b>' + esc(x.gcn.so) + '</b>.<br>' +
+    'Bấm <b>Tải ảnh</b> để lưu vào thư viện ảnh của điện thoại.</div>',
+    '<button class="btn btn-phu" onclick="veChaoChung()">Về màn hình chính</button>');
+}
+function tenTepGCN(){ return 'Giay_chung_nhan_' + boDau(gcnHienTai.hoTen).replace(/[^a-z0-9]+/gi, '_') + '.jpg'; }
+function anhGCN(){ return new Promise(ok => $('gcnCanvas').toBlob(ok, 'image/jpeg', 0.92)); }
+async function taiGCN(){
+  const b = await anhGCN(), a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = tenTepGCN(); document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+}
+async function chiaSeGCN(){
+  const f = new File([await anhGCN()], tenTepGCN(), { type: 'image/jpeg' });
+  if (navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f], title: 'Giấy chứng nhận' }); } catch (e) {} }
+  else taiGCN();
+}
+function inGCN(){
+  $('inGCN').innerHTML = '<img src="' + $('gcnCanvas').toDataURL('image/jpeg', 0.95) + '">';
+  setTimeout(() => window.print(), 200);
+}
+async function moTraCuuGCN(){
+  $('khoiDau').hidden = true; $('chipAI').hidden = true; $('chipGPS').hidden = true; $('canhBaoApp').hidden = true;
+  $('chanTrang').textContent = 'Tra cứu giấy chứng nhận – Ủy ban MTTQ Việt Nam thành phố Cần Thơ';
+  cho('Đang tra cứu giấy chứng nhận…');
+  let r;
+  try { r = await goi('traCuuGCN', MA_GCN); } catch (e) { r = { ok: false, loi: 'Không kết nối được máy chủ: ' + e.message }; }
+  const ve = '<a class="btn btn-phu" style="text-align:center;text-decoration:none;box-sizing:border-box" href="' + location.pathname + '">Về trang điểm danh</a>';
+  if (!r.ok){
+    $('kq').className = 'the kq that-bai';
+    $('kq').innerHTML = '<div class="icon">✖</div><h2>Không xác nhận được giấy chứng nhận</h2><ul><li>' + esc(r.loi) + '</li></ul>';
+    $('kqNut').innerHTML = ve; return hien('scrKQ');
+  }
+  veGCN(r.gcn, '<div style="color:#15803d;font-weight:700;font-size:17px">✔ Giấy chứng nhận hợp lệ</div><div class="goi-y">Số ' + esc(r.gcn.so) +
+    ' · cấp cho <b>' + esc(r.gcn.hoTen) + '</b> · ' + esc(r.gcn.ngayCap) + '</div>', ve);
+}
+
 /* ---------- Khởi động ---------- */
 window.addEventListener('load', async () => {
+  if (MA_GCN) return moTraCuuGCN();
   const app = (navigator.userAgent.match(/Zalo|FBAN|FBAV|Instagram|Line\//i) || [])[0];
   if (app){ $('tenApp').textContent = /zalo/i.test(app) ? 'Zalo' : /line/i.test(app) ? 'LINE' : 'Facebook/Instagram'; $('canhBaoApp').hidden = false; }
   try { TT = await goi('thongTinChung', MA_MAY); }
@@ -731,5 +952,7 @@ window.addEventListener('load', async () => {
   veChaoMay(MO_DANG_KY_TRUOC);
 });
 </script>
+<div id="inGCN"></div>
+<div id="hopViTri" hidden><div class="hop" id="hopViTriND"></div></div>
 </body>
 </html>
