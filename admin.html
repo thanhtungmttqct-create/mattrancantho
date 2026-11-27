@@ -351,6 +351,16 @@ async function veGiayCN(canvas, d, opt){
     gcnChu(c, 'Mã: ' + (d.ma || ''), 275, H - 130, 22, { mau: '#4b5563' });
   }
   if (opt.mau){ c.save(); c.translate(W / 2, H / 2); c.rotate(-0.35); gcnChu(c, 'BẢN MẪU', 0, 60, 220, { bold: true, mau: 'rgba(200,16,46,.16)' }); c.restore(); }
+  if (opt.xemTruoc){
+    // chữ XEM TRƯỚC chéo khắp giấy + dòng cảnh báo: không thể dùng thay giấy chính thức
+    c.save(); c.rotate(-0.4);
+    for (let yy = -200; yy < H + 900; yy += 300) for (let xx = -700; xx < W + 300; xx += 760)
+      gcnChu(c, 'XEM TRƯỚC', xx, yy, 92, { bold: true, mau: 'rgba(200,16,46,.13)' });
+    c.restore();
+    c.fillStyle = 'rgba(200,16,46,.9)'; c.fillRect(110, H - 205, 560, 110);
+    gcnChu(c, 'BẢN XEM TRƯỚC', 390, H - 155, 38, { bold: true, mau: '#fff' });
+    gcnChu(c, 'Không có giá trị – chưa phải giấy chính thức', 390, H - 115, 22, { mau: '#fff' });
+  }
   return canvas;
 }
 /* GCN-KET-THUC */
