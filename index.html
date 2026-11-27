@@ -776,8 +776,11 @@ async function veChaoMay(vaoDangKyTruoc){
   $('mayND').innerHTML = nd; $('mayNut').innerHTML = nut;
   hien('scrMay');
   // Quét lại mã sau giờ mở nhận: hiện ngay giấy chứng nhận (một lần mỗi lượt mở trang)
+  // Chỉ ở màn hình đầu tiên ngay sau khi quét mã / mở trang:
+  const lanDau = !daTuMoGCN; daTuMoGCN = true;
   const iCo = GCN_DS.findIndex(x => x.trangThai === 'co');
-  if (r.toi && iCo >= 0 && !daTuMoGCN && !r.toi.suKien.some(s => !s.daDiemDanh)){ daTuMoGCN = true; return xemGCN(iCo); }
+  if (lanDau && r.toi && iCo >= 0 && !r.toi.suKien.some(s => !s.daDiemDanh)) return xemGCN(iCo);          // sau giờ mở: hiện giấy chứng nhận
+  if (lanDau && r.toi && r.toi.suKien.length && r.toi.suKien.every(s => s.daDiemDanh)) return hienDaDiemDanh(r.toi);   // đã điểm danh: báo ngay
   if (vaoDangKyTruoc === true && !r.toi && !r.choChuyen){
     if (r.dangKyTruoc) moDangKyTruoc(); else alert('Ban Tổ chức chưa mở đăng ký trước. Vui lòng đăng ký khi đến hội trường.');
   }
@@ -876,6 +879,17 @@ async function kioskChon(ma){
 
 /* ---------- Giấy chứng nhận ---------- */
 let GCN_DS = [], gcnHienTai = null, daTuMoGCN = false;
+function hienDaDiemDanh(t){
+  const cho = (t.gcn || []).find(x => x.trangThai === 'cho');
+  $('kq').className = 'the kq thanh-cong';
+  $('kq').innerHTML = '<div class="icon">✔</div><h2>Bạn đã điểm danh</h2>' +
+    '<div class="ten">' + esc(t.hoTen) + '</div>' + (t.chucVu ? '<div class="cv">' + esc(t.chucVu) + '</div>' : '') +
+    '<div class="meta">' + t.suKien.map(s => esc(s.ten) + '<br>Điểm danh lúc <b>' + esc(s.daDiemDanh) + '</b>').join('<br><br>') +
+    '<br><br>Không cần điểm danh lại.' +
+    (cho ? '<br>📜 Giấy chứng nhận được cấp từ <b>' + esc(cho.moLuc) + '</b> nếu đủ các buổi — khi đó quét lại mã này để nhận.' : '') + '</div>';
+  $('kqNut').innerHTML = '<button class="btn btn-phu" onclick="veChaoChung()" id="btnVe">Về màn hình chính</button>';
+  hien('scrKQ');
+}
 const MA_GCN = (new URLSearchParams(location.search).get('gcn') || '').trim();
 function urlTraCuu(ma){ return location.origin + location.pathname + '?gcn=' + encodeURIComponent(ma); }
 async function veGCN(d, ttHtml, nutVe){
