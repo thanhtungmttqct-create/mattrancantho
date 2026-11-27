@@ -638,7 +638,9 @@ function veDsTen(){
   const ds = dsDK.filter(x => (!dv || x.donVi === dv) && (!q || boDau(x.hoTen).includes(q)));
   $('dkDs').innerHTML = ds.length ? ds.map(x => '<label class="' + (x.maDB === chonMa ? 'chon' : '') + '"><input type="radio" name="dkTen" value="' + esc(x.maDB) + '"' +
     (x.maDB === chonMa ? ' checked' : '') + ' onchange="chonTen(this.value)"><span><b>' + esc(x.hoTen) + '</b><small>' + esc(x.chucVu || '') +
-    (x.chucVu ? ' — ' : '') + esc(x.donVi) + '</small></span></label>').join('')
+    (x.chucVu ? ' — ' : '') + esc(x.donVi) + '</small>' +
+    (x.daGan === 'mayTinh' ? '<small style="color:#1d4ed8">💻 Đã đăng ký trên máy tính — chọn để chuyển sang điện thoại này</small>'
+      : x.daGan ? '<small style="color:#b45309">📱 Đã đăng ký trên thiết bị khác</small>' : '') + '</span></label>').join('')
     : '<div class="goi-y" style="padding:12px">Không tìm thấy. Nếu tên bạn không có trong danh sách, vui lòng liên hệ Ban Tổ chức.</div>';
 }
 function chonTen(ma){
@@ -697,6 +699,7 @@ function hienKetQua(r){
       '<div class="ten">' + esc(r.hoTen) + '</div>' + (r.chucVu ? '<div class="cv">' + esc(r.chucVu) + '</div>' : '') +
       '<div class="meta">' + (r.tenSK ? esc(r.tenSK) + '<br>' : '') + 'Thời gian: ' + esc(r.thoiGian) +
       (r.khoangCach != null && !r.daCo ? '<br>Cách điểm hội nghị: ' + r.khoangCach + ' m' : '') +
+      (r.chuyenTuMayTinh ? '<br>📱 Đã chuyển đăng ký từ máy tính sang điện thoại này.' : '') +
       (r.truoc || r.capNhat ? (CHE_DO_MAT ? '<br><b>Bước này chưa phải điểm danh.</b> Khi đến hội trường, mở trang và bấm <b>Điểm danh bằng khuôn mặt</b> — hệ thống sẽ tự nhận ra bạn.'
             : '<br><b>Bước này chưa phải điểm danh.</b> Khi đến hội trường, mở lại trang này <b>trên chính điện thoại và trình duyệt này</b> rồi bấm <b>ĐIỂM DANH</b>.')
         : r.chiDangKy ? (CHE_DO_MAT ? '<br>Hiện chưa có hội nghị đang mở; lần sau bạn chỉ cần quét khuôn mặt.' : '<br>Hiện chưa có hội nghị đang mở; khi đến hội nghị chỉ cần bấm ĐIỂM DANH trên điện thoại này.') : '') + '</div>';
@@ -750,7 +753,8 @@ async function veChaoMay(vaoDangKyTruoc){
   const coSK = r.suKien.length > 0;
   $('maySK').innerHTML = coSK
     ? r.suKien.map(s => '<div class="sk" style="margin-top:0;margin-bottom:6px"><b>' + esc(s.ten) + '</b>' + esc(s.diaDiem || '') + ' · ' + esc(s.gio) + '</div>').join('')
-    : '<div class="goi-y">Hiện chưa có hội nghị nào đang mở điểm danh.</div>';
+    : '<div class="goi-y">Hiện chưa có hội nghị nào đang mở điểm danh.</div>' +
+      (r.sapMo || []).map(s => '<div class="sk" style="margin-bottom:0;font-size:15px">⏰ <b style="display:inline">' + esc(s.ten) + '</b>: mở điểm danh lúc <b style="display:inline;color:#9b0c23">' + esc(s.moLuc) + '</b> hôm nay</div>').join('');
   let nd = '', nut = '';
   if (!MA_MAY){
     nd = '<h2>Trình duyệt không lưu được dữ liệu</h2><div class="goi-y">Hãy tắt chế độ ẩn danh/riêng tư hoặc mở bằng Chrome/Safari thường rồi tải lại trang.</div>';
