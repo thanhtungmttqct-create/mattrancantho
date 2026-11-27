@@ -763,7 +763,7 @@ async function veChaoMay(vaoDangKyTruoc){
     hoSo = t;
     nd = '<div class="goi-y">Điện thoại này đã đăng ký cho</div><div class="ten">' + esc(t.hoTen) + '</div>' +
       (t.chucVu ? '<div class="cv">' + esc(t.chucVu) + '</div>' : '') + '<div class="goi-y">' + esc(t.donVi || '') + '</div>' +
-      t.suKien.map(s => s.daDiemDanh ? '<div class="sk"><b>' + esc(s.ten) + '</b><span style="color:#15803d;font-weight:600">✔ Đã điểm danh lúc ' + esc(s.daDiemDanh) + '</span></div>' : '').join('');
+      veLichSu(t);
     const conLai = t.suKien.some(s => !s.daDiemDanh);
     GCN_DS = t.gcn || [];
     nd += GCN_DS.map((x, i) => x.trangThai === 'co'
@@ -896,13 +896,21 @@ async function kioskChon(ma){
 
 /* ---------- Giấy chứng nhận ---------- */
 let GCN_DS = [], gcnHienTai = null, daTuMoGCN = false;
+function veLichSu(t){
+  const ls = t.lichSu || [];
+  if (!ls.length) return '';
+  return '<div style="text-align:left;margin-top:12px;border-top:1px solid #e5e7eb;padding-top:10px">' +
+    '<div style="font-weight:700;font-size:15px;margin-bottom:4px">🕘 Lịch sử điểm danh</div>' +
+    ls.map(x => '<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed #e5e7eb;font-size:14px">' +
+      '<span style="color:#15803d;font-weight:700">✔</span><span style="flex:1"><b>' + esc(x.ten) + '</b><br><span style="color:#6b7280">' + esc(x.luc) +
+      (x.cach ? ' · ' + esc(x.cach) : '') + '</span></span></div>').join('') + '</div>';
+}
 function hienDaDiemDanh(t){
   const cho = (t.gcn || []).find(x => x.trangThai === 'cho');
   $('kq').className = 'the kq thanh-cong';
   $('kq').innerHTML = '<div class="icon">✔</div><h2>Bạn đã điểm danh</h2>' +
     '<div class="ten">' + esc(t.hoTen) + '</div>' + (t.chucVu ? '<div class="cv">' + esc(t.chucVu) + '</div>' : '') +
-    '<div class="meta">' + t.suKien.map(s => esc(s.ten) + '<br>Điểm danh lúc <b>' + esc(s.daDiemDanh) + '</b>').join('<br><br>') +
-    '<br><br>Không cần điểm danh lại.' +
+    veLichSu(t) + '<div class="meta">Không cần điểm danh lại.' +
     (cho ? '<br>📜 Giấy chứng nhận được cấp từ <b>' + esc(cho.moLuc) + '</b> nếu đủ các buổi — khi đó quét lại mã này để nhận.' : '') + '</div>';
   $('kqNut').innerHTML = '<button class="btn btn-phu" onclick="veChaoChung()" id="btnVe">Về màn hình chính</button>';
   hien('scrKQ');
