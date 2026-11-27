@@ -62,6 +62,12 @@
   #inGCN{display:none}
   #hopViTri{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:12px}
   #hopViTri .hop{background:#fff;border-radius:16px;max-width:520px;width:100%;padding:18px 16px 14px;max-height:88vh;overflow:auto;animation:len .2s ease-out}
+  #thanhViTri{display:flex;align-items:center;gap:8px;width:100%;border:0;border-radius:12px;padding:13px 14px;margin:0 0 12px;font:inherit;font-size:15px;font-weight:700;text-align:left}
+  #thanhViTri.cho{background:#fef9c3;color:#854d0e}
+  #thanhViTri.ok{background:#dcfce7;color:#166534}
+  #thanhViTri.loi{background:var(--do);color:#fff;cursor:pointer;animation:nhay 1.4s ease-in-out infinite;box-shadow:0 4px 14px rgba(200,16,46,.35)}
+  @keyframes nhay{50%{transform:scale(1.025)}}
+  #muiTenTD{position:fixed;top:4px;right:8px;z-index:70;background:#111827;color:#fff;border-radius:10px;padding:7px 11px;font-size:14px;font-weight:700;animation:nhay 1.2s ease-in-out infinite}
   @keyframes len{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
   #hopViTri h2{margin:0 0 6px;font-size:19px}
   #hopViTri ol{margin:8px 0 4px;padding-left:22px;line-height:1.55;font-size:15px}
@@ -88,9 +94,21 @@
 
   <!-- 0. Chế độ điện thoại: màn hình chính -->
   <section id="scrMay" class="scr" hidden>
+    <button id="thanhViTri" type="button" hidden></button>
     <div class="the" id="mayND"></div>
     <div class="the" id="maySK"></div>
     <div id="mayNut"></div>
+  </section>
+
+  <!-- 0a. Đang mở trong Zalo/Facebook: chuyển sang Chrome/Safari -->
+  <section id="scrTD" class="scr" hidden>
+    <div class="the" style="text-align:center">
+      <div style="font-size:46px;line-height:1">🌐</div>
+      <h2 style="margin:8px 0 6px">Mở bằng trình duyệt để điểm danh</h2>
+      <div class="goi-y">Bạn đang mở trang trong <b id="tdApp">Zalo</b>. Để lưu được điện thoại đã đăng ký và lấy được vị trí, hãy mở trang bằng <b id="tdTen">Chrome</b>.</div>
+    </div>
+    <div id="tdNut"></div>
+    <div class="the" id="tdHD" style="margin-top:12px"></div>
   </section>
 
   <!-- 0b. Chuyển điện thoại -->
@@ -353,7 +371,20 @@ const ngu = ms => new Promise(r => setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function hien(id){ document.querySelectorAll('.scr').forEach(s => s.hidden = s.id !== id); window.scrollTo(0,0); }
 function cho(txt){ $('choTxt').textContent = txt; hien('scrCho'); }
-function chip(id, txt, loai){ const c = $(id); c.textContent = txt; c.className = 'chip' + (loai ? ' ' + loai : ''); }
+function chip(id, txt, loai){ const c = $(id); c.textContent = txt; c.className = 'chip' + (loai ? ' ' + loai : ''); if (id === 'chipGPS') capNhatThanhViTri(); }
+/** Thanh trạng thái định vị trên màn hình chính: xanh = đã bật; đỏ = bấm để bật */
+function capNhatThanhViTri(){
+  const t = $('thanhViTri'); if (!t) return;
+  if (!canViTri || MO_DANG_KY_TRUOC || CHE_DO_MAT || KIOSK || TRONG_APP){ t.hidden = true; return; }
+  t.hidden = false;
+  if (viTri && Date.now() - viTri.t < 120000){
+    t.className = 'ok'; t.onclick = null;
+    t.innerHTML = '📍 Đã bật định vị ✓ <span style="font-weight:400;font-size:13px">(sai số ±' + Math.round(viTri.acc) + ' m)</span>';
+  } else if (maLoiViTri === 1 || maLoiViTri === 2 || (viTriLoi && watchId === null)){
+    t.className = 'loi'; t.innerHTML = '📍 Chưa bật định vị, bấm để bật';
+    t.onclick = () => { $('hopViTri').hidden = false; thuLaiViTri(); };
+  } else { t.className = 'cho'; t.onclick = null; t.innerHTML = '📍 Đang xác định vị trí…'; }
+}
 async function goi(action, ...args){
   const r = await fetch(API_URL, { method: 'POST', redirect: 'follow',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, args }) });
@@ -418,12 +449,24 @@ function taiMoHinh(){
 }
 
 /* ---------- Định vị ---------- */
-let maLoiViTri = 0, canViTri = false;
+let maLoiViTri = 0, canViTri = false, hgViTriThap = null;
 function batDinhVi(){
   canViTri = true;
   if (!navigator.geolocation){ viTriLoi = 'Thiết bị không hỗ trợ định vị.'; chip('chipGPS','Vị trí: không hỗ trợ','loi'); return; }
   if (watchId !== null) return;
   viTriLoi = null;
+  capNhatThanhViTri();
+  clearTimeout(hgViTriThap);
+  hgViTriThap = setTimeout(() => {      // trong hội trường GPS có thể chậm: lấy thêm vị trí theo wifi/mạng
+    if (watchId === null || (viTri && Date.now() - viTri.t < 30000)) return;
+    navigator.geolocation.getCurrentPosition(p => {
+      const c = p.coords;
+      if (viTri && Date.now() - viTri.t < 30000 && viTri.acc <= c.accuracy) return;
+      viTri = { lat: c.latitude, lng: c.longitude, acc: c.accuracy, t: Date.now() };
+      viTriLoi = null; maLoiViTri = 0; anHuongDanViTri();
+      chip('chipGPS', 'Vị trí: sai số ±' + Math.round(c.accuracy) + ' m', c.accuracy <= 100 ? 'ok' : '');
+    }, () => {}, { enableHighAccuracy: false, maximumAge: 60000, timeout: 15000 });
+  }, 6000);
   watchId = navigator.geolocation.watchPosition(p => {
     const c = p.coords, moi = { lat: c.latitude, lng: c.longitude, acc: c.accuracy, t: Date.now() };
     if (!viTri || moi.acc <= viTri.acc * 1.5 || Date.now() - viTri.t > 15000) viTri = moi;
@@ -455,6 +498,7 @@ function hienHuongDanViTri(ma){
   $('hopViTriND').innerHTML = '<div class="bieu-tuong">📍</div><h2 style="text-align:center">' + (tat ? 'Điện thoại đang tắt định vị' : 'Chưa cho phép truy cập vị trí') + '</h2>' +
     '<div class="goi-y" style="text-align:center">Cần bật định vị để xác nhận bạn đang có mặt tại hội trường.</div>' + buoc +
     '<button class="btn btn-chinh" onclick="thuLaiViTri()">📍 Chưa bật định vị, bấm để bật</button>' +
+    (tat ? '' : '<button class="btn btn-phu" onclick="location.reload()">↻ Đã cho phép — tải lại trang</button>') +
     '<button class="btn btn-phu" onclick="anHuongDanViTri(true)">Để sau</button>';
   $('hopViTri').hidden = false;
 }
@@ -990,10 +1034,47 @@ async function moTraCuuGCN(){
     ' · cấp cho <b>' + esc(r.gcn.hoTen) + '</b> · ' + esc(r.gcn.ngayCap) + '</div>', ve);
 }
 
+/* ---------- Đang ở trong Zalo/Facebook → chuyển sang Chrome/Safari ---------- */
+function linkTrinhDuyet(loai){
+  const d = location.host + location.pathname + location.search;
+  if (loai === 'chrome') return 'intent://' + d + '#Intent;scheme=https;package=com.android.chrome;end';
+  if (loai === 'android') return 'intent://' + d + '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
+  if (loai === 'safari') return 'x-safari-https://' + d;
+  if (loai === 'chromeIOS') return 'googlechromes://' + d;
+  return location.href;
+}
+function moBangTrinhDuyet(loai){ location.href = linkTrinhDuyet(loai); }
+function chepLinkTD(nut){
+  const u = location.href, xong = () => { nut.textContent = '✔ Đã sao chép — mở ' + (LA_IPHONE ? 'Safari' : 'Chrome') + ', dán vào ô địa chỉ'; };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(xong, () => prompt('Sao chép đường dẫn:', u));
+  else prompt('Sao chép đường dẫn:', u);
+}
+function moManTrinhDuyet(tenApp){
+  $('khoiDau').hidden = true; $('canhBaoApp').hidden = true; $('chipAI').hidden = true; $('chipGPS').hidden = true;
+  $('chanTrang').textContent = 'Mỗi lần điểm danh đều ghi vị trí, thời gian và điện thoại đã dùng để đối chiếu.';
+  $('tdApp').textContent = tenApp; $('tdTen').textContent = LA_IPHONE ? 'Safari' : 'Chrome';
+  $('tdNut').innerHTML = LA_IPHONE
+    ? '<button class="btn btn-chinh btn-lon" onclick="moBangTrinhDuyet(\'safari\')">🧭 MỞ BẰNG SAFARI</button>' +
+      '<button class="btn btn-phu" onclick="moBangTrinhDuyet(\'chromeIOS\')">Mở bằng Chrome</button>'
+    : '<button class="btn btn-chinh btn-lon" onclick="moBangTrinhDuyet(\'chrome\')">🌐 MỞ BẰNG CHROME</button>' +
+      '<button class="btn btn-phu" onclick="moBangTrinhDuyet(\'android\')">Mở bằng trình duyệt khác</button>';
+  $('tdNut').innerHTML += '<button class="btn btn-phu" onclick="chepLinkTD(this)">📋 Sao chép đường dẫn</button>';
+  $('tdHD').innerHTML = '<b>Nếu bấm nút mà không chuyển được:</b><ol style="margin:6px 0 0;padding-left:22px;line-height:1.6">' +
+    '<li>Bấm nút <b>⋯</b> (hoặc <b>⋮</b>) ở <b>góc trên bên phải</b> màn hình.</li>' +
+    '<li>Chọn <b>' + (LA_IPHONE ? 'Mở bằng trình duyệt / Mở trong Safari' : 'Mở bằng trình duyệt') + '</b>.</li>' +
+    '<li>Trang điểm danh mở trong ' + (LA_IPHONE ? 'Safari' : 'Chrome') + ' → bật định vị → bấm <b>ĐIỂM DANH</b>.</li></ol>';
+  if (!$('muiTenTD')) document.body.insertAdjacentHTML('beforeend', '<div id="muiTenTD">Bấm ⋯ ở đây ↗</div>');
+  hien('scrTD');
+  // Android: tự chuyển sang Chrome ngay (1 lần mỗi phiên, tránh lặp)
+  let daThu = false; try { daThu = sessionStorage.getItem('daChuyenTD') === '1'; sessionStorage.setItem('daChuyenTD', '1'); } catch (e) {}
+  if (LA_ANDROID && !daThu) setTimeout(() => moBangTrinhDuyet('chrome'), 400);
+}
+
 /* ---------- Khởi động ---------- */
 window.addEventListener('load', async () => {
   if (MA_GCN) return moTraCuuGCN();
   const app = (navigator.userAgent.match(/Zalo|FBAN|FBAV|Instagram|Line\//i) || [])[0];
+  if (app) return moManTrinhDuyet(/zalo/i.test(app) ? 'Zalo' : /line/i.test(app) ? 'LINE' : 'Facebook/Instagram');
   if (app){ $('tenApp').textContent = /zalo/i.test(app) ? 'Zalo' : /line/i.test(app) ? 'LINE' : 'Facebook/Instagram'; $('canhBaoApp').hidden = false; }
   try { TT = await goi('thongTinChung', MA_MAY); }
   catch (e) { $('khoiDau').hidden = true; return ketQuaLoi(['Không kết nối được máy chủ: ' + e.message]); }
