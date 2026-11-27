@@ -437,24 +437,37 @@ function hienHuongDanViTri(ma){
   const buoc = LA_IPHONE
     ? '<ol><li>Mở <b>Cài đặt</b> › <b>Quyền riêng tư &amp; Bảo mật</b> › <b>Dịch vụ định vị</b> → <b>bật</b>.</li>' +
       '<li>Trong cùng mục đó, kéo xuống chọn <b>Safari Websites</b> (hoặc <b>Chrome</b>) → chọn <b>Khi dùng ứng dụng</b> / <b>Hỏi</b>.</li>' +
-      '<li>Quay lại trang này, bấm <b>Thử lại</b> rồi bấm <b>Cho phép</b>.</li></ol>'
+      '<li>Quay lại trang này, bấm nút đỏ bên dưới rồi bấm <b>Cho phép</b>.</li></ol>'
     : '<ol><li>Vuốt từ trên màn hình xuống, bấm biểu tượng <b>Vị trí</b> (📍) để <b>bật</b>.</li>' +
       '<li>' + (tat ? 'Nếu Chrome hỏi <b>“Bật vị trí thiết bị?”</b> → bấm <b>OK</b>.' :
         'Bấm biểu tượng <b>ổ khóa / ⓘ</b> cạnh địa chỉ trang › <b>Quyền</b> › <b>Vị trí</b> → <b>Cho phép</b>.') + '</li>' +
-      '<li>Bấm <b>Thử lại</b> bên dưới.</li></ol>';
+      '<li>Hoặc bấm nút đỏ bên dưới: máy sẽ hỏi bật vị trí hoặc mở thẳng phần <b>Cài đặt › Vị trí</b>.</li></ol>';
   $('hopViTriND').innerHTML = '<div class="bieu-tuong">📍</div><h2 style="text-align:center">' + (tat ? 'Điện thoại đang tắt định vị' : 'Chưa cho phép truy cập vị trí') + '</h2>' +
     '<div class="goi-y" style="text-align:center">Cần bật định vị để xác nhận bạn đang có mặt tại hội trường.</div>' + buoc +
-    '<button class="btn btn-chinh" onclick="thuLaiViTri()">📍 Thử lại – bật định vị</button>' +
+    '<button class="btn btn-chinh" onclick="thuLaiViTri()">📍 Chưa bật định vị, bấm để bật</button>' +
     '<button class="btn btn-phu" onclick="anHuongDanViTri(true)">Để sau</button>';
   $('hopViTri').hidden = false;
 }
 function anHuongDanViTri(){ $('hopViTri').hidden = true; }
+const LA_ANDROID = /Android/i.test(navigator.userAgent);
+let daMoCaiDat = false;
+/** Android: mở thẳng màn hình Cài đặt › Vị trí của điện thoại */
+function moCaiDatViTri(){
+  daMoCaiDat = true;
+  const a = document.createElement('a');
+  a.href = 'intent:#Intent;action=android.settings.LOCATION_SOURCE_SETTINGS;end';
+  document.body.appendChild(a); a.click(); a.remove();
+}
 function thuLaiViTri(){
   if (watchId !== null){ navigator.geolocation.clearWatch(watchId); watchId = null; }
-  $('hopViTriND').innerHTML = '<div class="bieu-tuong">📍</div><h2 style="text-align:center">Đang xin quyền vị trí…</h2>' +
-    '<div class="goi-y" style="text-align:center">Nếu trình duyệt hỏi, hãy bấm <b>Cho phép</b>.</div><div class="xoay"></div>';
-  // gọi trực tiếp trong lúc người dùng bấm nút để trình duyệt hiện hộp xin quyền / hộp bật vị trí thiết bị
-  navigator.geolocation.getCurrentPosition(() => {}, () => {}, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  $('hopViTriND').innerHTML = '<div class="bieu-tuong">📍</div><h2 style="text-align:center">Đang bật định vị…</h2>' +
+    '<div class="goi-y" style="text-align:center">Nếu máy hỏi, hãy bấm <b>OK</b> / <b>Cho phép</b>. Bật xong, quay lại trang này.</div><div class="xoay"></div>';
+  // gọi ngay trong lúc người dùng bấm nút: Chrome sẽ hiện hộp "Bật vị trí thiết bị?" hoặc hộp xin quyền
+  const t0 = Date.now(), maCu = maLoiViTri;
+  navigator.geolocation.getCurrentPosition(() => {}, e => {
+    // Định vị của máy đang tắt mà Chrome không tự hỏi (lỗi trả về ngay) → mở thẳng Cài đặt › Vị trí
+    if (LA_ANDROID && !TRONG_APP && (e.code === 2 || maCu === 2) && Date.now() - t0 < 2500) moCaiDatViTri();
+  }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
   batDinhVi();
 }
 // Theo dõi khi người dùng bật lại quyền trong cài đặt rồi quay về trang
