@@ -474,6 +474,85 @@ async function luuSK(){
     viDo: $('skLat').value, kinhDo: $('skLng').value, banKinh: $('skBK').value, nhom: $('skNhom').value, trangThai: $('skTT').value };
   try { nhanDuLieu(await goi('adminLuuSuKien', s)); formSK(); bao('Đã lưu hội nghị'); } catch (e) { loi(e); }
 }
+/* ---------- Chia buổi / chỉnh giờ theo buổi ----------
+ * Các buổi của cùng 1 hội nghị = các dòng hội nghị cùng ngày, cùng tọa độ, cùng nhóm tham dự.
+ * Dùng chung mã QR; mỗi buổi điểm danh riêng; giấy chứng nhận có thể bắt buộc đủ các buổi. */
+let BUOI = null;
+function nhomBuoi(s){
+  return D.suKien.filter(x => String(x.batDau || '').slice(0, 10) === String(s.batDau || '').slice(0, 10) &&
+    String(x.nhom || '') === String(s.nhom || '') && Number(x.viDo) === Number(s.viDo) && Number(x.kinhDo) === Number(s.kinhDo))
+    .sort((a, b) => String(a.batDau) < String(b.batDau) ? -1 : 1);
+}
+function tenGocSK(t){ return String(t || '').replace(/\s*[–-]\s*Buổi\s.*$/i, '').trim(); }
+function chiaBuoi(ma){
+  const s = timSK(ma), ds = nhomBuoi(s), ngay = String(s.batDau).slice(0, 10);
+  BUOI = { mau: s, ngay };
+  moModal('<h2>🕐 Chia buổi / chỉnh giờ theo buổi</h2>' +
+    '<div class="nho">Ngày <b>' + ngay.split('-').reverse().join('/') + '</b> · ' + esc(s.diaDiem || '') +
+    '<br>Các buổi dùng <b>chung mã QR</b>, địa điểm và tọa độ. Mỗi buổi điểm danh riêng; điện thoại tự nhận buổi đang mở.' +
+    '<br>Lượt điểm danh đã có được giữ nguyên khi đổi giờ.</div>' +
+    '<div id="dsBuoi" style="margin-top:8px"></div>' +
+    '<div class="hang"><button class="btn phu" onclick="themDongBuoi()">+ Thêm buổi</button></div>' +
+    '<div class="nho" id="buoiTT" style="margin-top:6px"></div>' +
+    '<div class="hang"><button class="btn" id="btnLuuBuoi" onclick="luuBuoi()">Lưu giờ các buổi</button><button class="btn xam" onclick="dongModal()">Đóng</button></div>');
+  ds.forEach(x => themDongBuoi(x));
+}
+function themDongBuoi(x){
+  const ds = [...document.querySelectorAll('#dsBuoi .dong-buoi')];
+  let ten, bd, kt;
+  if (x){ ten = x.ten; bd = String(x.batDau).slice(11, 16); kt = String(x.ketThuc).slice(11, 16); }
+  else {
+    const cuoi = ds.length ? ds[ds.length - 1].querySelector('.bKT').value : '07:00';
+    const [h, m] = (cuoi || '12:00').split(':').map(Number);
+    const p = Math.min(h * 60 + m + 60, 23 * 60), q = Math.min(p + 240, 23 * 60 + 59);
+    const hm = v => ('0' + Math.floor(v / 60)).slice(-2) + ':' + ('0' + v % 60).slice(-2);
+    bd = hm(p); kt = hm(q);
+    ten = tenGocSK(BUOI.mau.ten) + ' – ' + (p >= 12 * 60 ? 'Buổi chiều' : 'Buổi ' + (ds.length + 1));
+  }
+  const d = document.createElement('div');
+  d.className = 'dong-buoi'; d.dataset.ma = x ? x.maSK : '';
+  d.style.cssText = 'border:1px solid var(--vien);border-radius:10px;padding:8px 10px;margin-bottom:8px';
+  d.innerHTML = '<div class="nho"><b>' + (x ? esc(x.maSK) : 'Buổi mới') + '</b>' + (x && x.giaiDoan === 'dang' ? ' · <span class="badge b-xanh">Đang diễn ra</span>' : '') +
+    (x ? '' : ' · <a href="#" onclick="this.closest(\'.dong-buoi\').remove();return false">bỏ</a>') + '</div>' +
+    '<label>Tên buổi</label><input class="bTen" value="' + esc(ten) + '">' +
+    '<div class="hang" style="margin-top:4px"><label style="margin:0">Từ</label><input type="time" class="bBD" value="' + bd + '" style="width:auto">' +
+    '<label style="margin:0">đến</label><input type="time" class="bKT" value="' + kt + '" style="width:auto"></div>';
+  $('dsBuoi').appendChild(d);
+}
+async function luuBuoi(){
+  const ds = [...document.querySelectorAll('#dsBuoi .dong-buoi')].map(d => ({ ma: d.dataset.ma,
+    ten: d.querySelector('.bTen').value.trim(), bd: d.querySelector('.bBD').value, kt: d.querySelector('.bKT').value }));
+  for (const x of ds){
+    if (!x.ten) return loi('Chưa nhập tên buổi.');
+    if (!x.bd || !x.kt || x.kt <= x.bd) return loi('Giờ của "' + x.ten + '" không hợp lệ (giờ kết thúc phải sau giờ bắt đầu).');
+  }
+  const xep = ds.slice().sort((a, b) => a.bd < b.bd ? -1 : 1);
+  for (let i = 1; i < xep.length; i++) if (xep[i].bd < xep[i - 1].kt) return loi('Giờ "' + xep[i - 1].ten + '" và "' + xep[i].ten + '" bị chồng nhau.');
+  const m = BUOI.mau, ngay = BUOI.ngay, moi = [];
+  $('btnLuuBuoi').disabled = true; $('buoiTT').textContent = 'Đang lưu…';
+  try {
+    for (const x of ds){
+      const g = x.ma ? timSK(x.ma) : m;
+      const s = { maSK: x.ma, ten: x.ten, diaDiem: g.diaDiem || m.diaDiem || '', batDau: ngay + 'T' + x.bd, ketThuc: ngay + 'T' + x.kt,
+        viDo: g.viDo, kinhDo: g.kinhDo, banKinh: g.banKinh, nhom: g.nhom || '', trangThai: g.trangThai || 'Mở' };
+      if (x.ma && g.ten === s.ten && String(g.batDau).slice(0, 16) === s.batDau && String(g.ketThuc).slice(0, 16) === s.ketThuc) continue;
+      const truoc = new Set(D.suKien.map(k => k.maSK));
+      nhanDuLieu(await goi('adminLuuSuKien', s));
+      if (!x.ma){ const k = D.suKien.find(v => !truoc.has(v.maSK)); if (k) moi.push(k.maSK); }
+    }
+    let themGCN = 0;
+    if (moi.length){                // buổi mới → tự thêm vào giấy chứng nhận đang dùng các buổi cùng hội nghị
+      const ma = nhomBuoi(m).map(k => k.maSK);
+      for (const c of (D.chungNhan || []).slice()){
+        if (!c.dsSuKien.some(k => ma.indexOf(k) >= 0)) continue;
+        const r = await goi('adminLuuGCN', Object.assign({}, c, { dsSuKien: [...new Set(c.dsSuKien.concat(moi))] }));
+        D.chungNhan = r.ds; themGCN++;
+      }
+    }
+    dongModal();
+    bao('Đã lưu giờ các buổi' + (themGCN ? ' · buổi mới đã được thêm vào giấy chứng nhận (bắt buộc đủ các buổi)' : ''), 6000);
+  } catch (e) { loi(e); $('btnLuuBuoi').disabled = false; $('buoiTT').textContent = ''; }
+}
 function veSK(){
   const gd = { dang: ['Đang diễn ra', 'b-xanh'], sap: ['Sắp diễn ra', 'b-vang'], xong: ['Đã kết thúc', 'b-xam'] };
   $('dsSK').innerHTML = D.suKien.length ? D.suKien.slice().reverse().map(s => {
@@ -483,6 +562,7 @@ function veSK(){
       ' · Bán kính ' + esc(s.banKinh) + ' m · Nhóm: ' + esc(s.nhom || 'Tất cả') + '</div>' +
       '<div class="hang"><button class="btn nho" onclick="xemKQ(\'' + s.maSK + '\')">Xem kết quả</button>' +
       '<button class="btn nho phu" onclick="suaSK(\'' + s.maSK + '\')">Sửa</button>' +
+      '<button class="btn nho phu" onclick="chiaBuoi(\'' + s.maSK + '\')">🕐 Chia buổi / chỉnh giờ</button>' +
       '<button class="btn nho xam" onclick="doiTTSK(\'' + s.maSK + '\')">' + (s.trangThai === 'Đóng' ? 'Mở lại' : 'Đóng điểm danh') + '</button>' +
       '<button class="btn nho phu" onclick="inPoster(\'' + s.maSK + '\')">🖨 In mã QR</button>' +
       '<a class="btn nho xam" style="text-decoration:none" target="_blank" href="https://www.google.com/maps?q=' + s.viDo + ',' + s.kinhDo + '">Bản đồ</a>' +
